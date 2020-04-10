@@ -1,0 +1,32 @@
+Nvisits : 2390000 #total number of LSST visits - 10 years
+Fields : ['COSMOS','ELAIS','CDFS','XMM-LSS','ADFS1','ADFS2']
+COSMOS :
+  season_length: 6.0 #season length [ months]
+  cadence: 3 #cadence [days]
+  seasons: 1-10 #seasons
+  weight_visit: 1
+ELAIS :
+  season_length:  6.0 #season length [ months]
+  cadence: 3 #cadence [days]
+  seasons: 1-10 #seasons
+  weight_visit: 1     
+CDFS :
+  season_length:  6.0 #season length [ months]
+  cadence: 3 #cadence [days]
+  seasons: 1-10 #seasons
+  weight_visit: 1 
+XMM-LSS :
+  season_length:  6.0 #season length [ months]
+  cadence: 3 #cadence [days]
+  seasons: 1-10 #seasons
+  weight_visit: 1   
+ADFS1 :
+  season_length:  6.0 #season length [ months]
+  cadence: 3 #cadence [days]
+  seasons: 1-10 #seasons
+  weight_visit: 1
+ADFS2 :
+  season_length:  6.0 #season length [ months]
+  cadence: 3 #cadence [days]
+  seasons: 1-10 #seasons
+  weight_visit: 1
