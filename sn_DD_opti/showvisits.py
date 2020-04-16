@@ -10,7 +10,7 @@ import numpy as np
 matplotlib.use('tkagg')
 
 
-class ShowVisits:
+class Show_Visits:
     """
     class to display nvisits vs redshift
 
@@ -150,7 +150,7 @@ class ShowVisits:
                      color='r', linestyle='--')
 
 
-class GUIVisits(ShowVisits):
+class GUI_Visits(Show_Visits):
     """
     class building a GUI where plots may be shown and
     inherits from ShowVisits
