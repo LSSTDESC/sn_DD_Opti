@@ -23,7 +23,7 @@ class DD_Budget:
 
         Parameters
         ---------------
-        file_visits_ref: npy file 
+        file_visits_ref: npy file
           with the following columns
           fieldname: name of the DD field
           season: season number
@@ -48,10 +48,10 @@ class DD_Budget:
         self.df_visits_ref = Mod_z(
             '{}/{}'.format(dir_config, file_visits_ref)).nvisits
         self.df_visits = Mod_z('{}/{}'.format(dir_config, file_visits)).nvisits
-        #self.dir_config = dir_config
+        # self.dir_config = dir_config
         # loading the configuration file for this scenario
         name = '{}/{}.yaml'.format(dir_config, configName)
-        #config_orig = yaml.load(open(name), Loader=yaml.FullLoader)
+        # config_orig = yaml.load(open(name), Loader=yaml.FullLoader)
         config_orig = yaml.load(open(name))
 
         # little modif here: convert season param to lists
@@ -64,7 +64,7 @@ class DD_Budget:
                 config[field]['seasons'])
 
         self.process(config)
-        self.gui()
+        # self.gui()
 
     def process(self, config):
         """
@@ -74,7 +74,7 @@ class DD_Budget:
         Parameters
         ---------------
         configName: str
-          config file name composed of the total number of visits, 
+          config file name composed of the total number of visits,
         fields and associated infos (cadence, season length, seasons)
 
         """
@@ -86,7 +86,7 @@ class DD_Budget:
         self.nvisits_ref, self.z_ref, self.nvisits_band_ref = self.interp_visits(
             self.df_visits_ref, runtype='Nvisits_single')
 
-        #print('test2', self.nvisits_ref['COSMOS'][1]([0.8, 0.85]))
+        # print('test2', self.nvisits_ref['COSMOS'][1]([0.8, 0.85]))
         # loading the number of visits for the case a single  m5 per band
 
         self.nvisits, self.z, self.nvisits_band = self.interp_visits(
@@ -282,7 +282,7 @@ class DD_Budget:
             df.loc[:, 'name'] = col
             df.loc[:, 'Nvisits_night'] = interp_night(df['budget'])
 
-            #df_bud_z = pd.concat([df_bud_z, df], sort=False)
+            # df_bud_z = pd.concat([df_bud_z, df], sort=False)
             df_bud_z = pd.concat([df_bud_z, df])
 
             # r.append((col,interp_ddbudget(0.04),interp_ddbudget(0.08)))
@@ -444,188 +444,6 @@ class DD_Budget:
 
         return nVisits
 
-    def gui(self):
-        """
-        Method to build a GUI to show the results
-
-        """
-        root = tk.Tk()
-        root.title('DD optimisation for SN')
-        self.fig = plt.Figure(figsize=(12, 9), dpi=100)
-        #self.fig.suptitle(self.configName.split('.')[0], fontsize=15)
-        gs = self.fig.add_gridspec(2, 1)
-        self.ax1 = self.fig.add_subplot(gs[0, 0])
-        self.ax2 = self.fig.add_subplot(gs[1, 0])
-
-        self.fig.subplots_adjust(right=0.8, bottom=0.25, top=0.95)
-
-        self.canvas = FigureCanvasTkAgg(self.fig, master=root)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
-        self.canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
-
-        self.toolbar = NavigationToolbar2Tk(self.canvas, root)
-        self.toolbar.update()
-
-        self.plotBudget_zlim()
-        self.plotNvisits()
-        self.ax1.set_xlim(self.zminp, self.zmax)
-        self.ax2.set_xlim(self.zminp, self.zmax)
-        # common font
-        helv36 = tkFont.Font(family='Helvetica', size=15, weight='bold')
-
-        # building the GUI
-        # frames
-        button_frame = tk.Frame(master=root, bg="white")
-        button_frame.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
-        #button_frame.place(relx=.9, rely=.5, anchor="c")
-        button_frame.place(relx=.9, rely=.85, anchor="c")
-
-        fields_frame = tk.Frame(master=root, bg="white")
-        fields_frame.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
-        #button_frame.place(relx=.9, rely=.5, anchor="c")
-        fields_frame.place(relx=.4, rely=.85, anchor="c")
-
-        # entries
-        ents = self.make_entries(button_frame, font=helv36)
-        fields = self.make_fields(fields_frame, font=helv36)
-        # buttons
-        heightb = 3
-        widthb = 6
-
-        nvisits_button = tk.Button(
-            button_frame, text="Nvisits", command=(lambda e=ents, b=fields: self.updateData(e, b)),
-            bg='yellow', height=heightb, width=widthb, fg='red', font=helv36)
-
-        quit_button = tk.Button(button_frame, text="Quit",
-                                command=root.quit, bg='yellow',
-                                height=heightb, width=widthb, fg='blue', font=helv36)
-
-        button_frame.columnconfigure(0, weight=1)
-        button_frame.columnconfigure(1, weight=1)
-
-        nvisits_button.grid(row=4, column=0, sticky=tk.W+tk.E)
-        quit_button.grid(row=4, column=1, sticky=tk.W+tk.E)
-
-        # quit_button.pack(side=tk.BOTTOM)
-        root.mainloop()
-
-    def make_entries(self, frame, font):
-        """
-        Method to make entries available to the GUI
-
-        Parameters
-        ---------------
-        frame: tk.Frame
-          frame where entries will be located
-        font: tkFont
-          font used for the label
-
-        Returns
-        ----------
-        entries: dict
-          dict of entries
-
-        """
-
-        #Nvisits : 2390000
-        tk.Label(frame, text='Nvisits', bg='white',
-                 fg='red', font=font).grid(row=0)
-        # tk.Label(frame, text='Scenario', bg='white',
-        #         fg='red', font=font).grid(row=1)
-        tk.Label(frame, text='DD budget', bg='white',
-                 fg='red', font=font).grid(row=2)
-
-        entries = {}
-
-        entries['Nvisits'] = tk.Entry(frame, width=10, font=font)
-        #entries['Scenario'] = tk.Entry(frame, width=10, font=font)
-        entries['DDbudget'] = tk.Entry(frame, width=10, font=font)
-
-        entries['Nvisits'].insert(10, 2390000)
-        #entries['Scenario'].insert(10, self.configName)
-        entries['DDbudget'].insert(10, "0.05")
-
-        entries['Nvisits'].grid(row=0, column=1)
-        #entries['Scenario'].grid(row=1, column=1)
-        entries['DDbudget'].grid(row=2, column=1)
-
-        return entries
-
-    def make_fields(self, frame, font):
-
-        # frame.grid_configure(minsize=150)
-        frame.grid_rowconfigure(1, weight=1)
-        frame.grid_columnconfigure(20, weight=1)
-        fields = {}
-        tk.Label(frame, text='cadence', bg='white',
-                 fg='black', font=font).grid(row=1, column=0, sticky=tk.W)
-        tk.Label(frame, text='season length', bg='white',
-                 fg='black', font=font).grid(row=2, column=0, sticky=tk.W)
-        tk.Label(frame, text='seasons', bg='white',
-                 fg='black', font=font).grid(row=3, column=0, sticky=tk.W)
-        for icol, fieldname in enumerate(self.Fields):
-            fields[fieldname] = {}
-            fields[fieldname]['state'] = tk.IntVar()
-            fields[fieldname]['check'] = tk.Checkbutton(
-                frame, text=fieldname, font=font, bg='white',
-                highlightthickness=0, bd=0, variable=fields[fieldname]['state'])
-            fields[fieldname]['check'].select()
-            fields[fieldname]['check'].grid(
-                row=0, column=icol+1, sticky=tk.W, padx=0)
-
-            fields[fieldname]['cadence'] = tk.Entry(frame, width=10, font=font)
-            fields[fieldname]['season_length'] = tk.Entry(
-                frame, width=10, font=font)
-            fields[fieldname]['seasons'] = tk.Entry(frame, width=10, font=font)
-
-            for ib, val in enumerate(['cadence', 'season_length', 'seasons']):
-                fields[fieldname][val].insert(
-                    10, str(self.conf_orig[fieldname][val]))
-                fields[fieldname][val].grid(row=1+ib, column=icol+1)
-
-            #fields[fieldname]['season_length'].insert(10, '180')
-            #fields[fieldname]['seasons'].insert(10, '1,2')
-            """
-            fields[fieldname]['cadence'].grid(row=1+id, column=icol+1)
-            fields[fieldname]['season_length'].grid(row=2, column=icol+1)
-            fields[fieldname]['seasons'].grid(row=3, column=icol+1)
-            """
-        return fields
-
-    def updateData(self, entries, fields):
-        """
-        Method to update the plot when buttons are clicked
-
-        Parameters
-        ---------------
-        entries: dict
-           dict of entries
-
-        """
-
-        config = self.dict_from_fields(fields)
-
-        config['Nvisits'] = int(entries['Nvisits'].get())
-        # reset axes
-        self.ax1.cla()
-        self.ax2.cla()
-
-        self.process(config)
-        # plot references
-        self.plotBudget_zlim()
-        self.plotNvisits()
-
-        # plot results of entries
-        ddbudget = float(entries['DDbudget'].get())
-        if ddbudget > 0:
-            zlim = self.plotBudget_zlim_budget(ddbudget)
-            self.plotNvisits_zlim(zlim)
-        # update canvas
-        self.ax1.set_xlim(self.zminp, self.zmax)
-        self.ax2.set_xlim(self.zminp, self.zmax)
-        self.canvas.draw()
-
     def plotBudget_zlim(self):
         """
         Plot to display DD budget results as a function of the redshift limit
@@ -670,7 +488,9 @@ class DD_Budget:
             #              '$z_{lim}^{'+val[0]+'}$='+str(np.round(val[1], 2)), fontsize=fontsize)
             alltext += '$z_{lim}^{'+val[0]+'}$='+str(np.round(val[1], 2))
             alltext += ' '
-        self.ax1.text(0.3, 0.06, alltext, fontsize=fontsize)
+        self.ax1.text(0.3, 0.05, alltext, fontsize=fontsize)
+        self.ax1.text(0.3, 0.02, 'Budget: {}'.format(
+            np.round(dd_budget, 2)), fontsize=fontsize)
         return zlim_median
 
     def plotNvisits(self):
@@ -706,11 +526,13 @@ class DD_Budget:
 
         fontsize = 15
         ylims = self.ax2.get_ylim()
+        xlims = self.ax2.get_xlim()
         nvisits = int(np.round(self.nvisits_ref[fieldName][season](zlim)))
         yref = 0.9*ylims[1]
         scale = 0.1*ylims[1]
         self.ax2.text(0.35, yref, 'Nvisits={}'.format(
             nvisits), fontsize=fontsize)
+        self.ax2.plot(xlims, [nvisits]*2, color='red', linestyle='--')
         for io, b in enumerate('grizy'):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(
@@ -719,9 +541,9 @@ class DD_Budget:
                           'Nvisits - ${}$ ={}'.format(b, nvisits_b), fontsize=fontsize, color=self.colors[b])
 
         zl = 'z$_{lim}$'
-        self.ax2.text(zlim-0.15, 0.95*yref,
+        self.ax2.text(zlim-0.05, 0.95*yref,
                       '{} = {}'.format(zl, np.round(zlim, 2)), fontsize=fontsize)
-        self.ax2.arrow(zlim, yref, 0., -yref,
+        self.ax2.arrow(zlim, 0.9*yref, 0., -0.9*yref,
                        length_includes_head=True, color='r',
                        head_length=5, head_width=0.01)
         self.ax2.set_ylim(0,)
@@ -999,7 +821,7 @@ class DD_Budget:
 
         Parameters
         ----------------
-        fields: dict 
+        fields: dict
           dict of tk widgets
 
         """
@@ -1028,6 +850,19 @@ class DD_Budget:
         return resdict
 
     def getSeasons(self, data):
+        """
+        Method to get the number of seasons from GUI
+
+        Parameters
+        ---------------
+        data: str
+          data to process
+
+        Returns
+        -----------
+        list of seasons to consider
+
+        """
         li = None
         if '-' in data:
             spl = data.split('-')
@@ -1037,3 +872,308 @@ class DD_Budget:
             li = list(map(int, spl))
 
         return li
+
+
+class GUI_Budget(DD_Budget):
+    """
+    class building a GUI to show
+    the DD budget vs redshift limit
+    inherits from DD_Budget
+
+    Parameters
+    ---------------
+    file_visits_ref: npy file
+     with the following columns
+          fieldname: name of the DD field
+          season: season number
+          Nvisits: total number of visits
+          cadence: candence
+          Nvisits_g,r,i,z,y: number of visits in g,r,i,z,y bands
+         file_visits: npy file
+          with same infos as df_visits_ref
+         runtype: str, opt
+           type of SNR run to consider (default: Nvisits_single)
+        dir_config: str,opt
+          directory where config files are located
+        configName: str
+         configuration (yaml) file of the DDF
+
+    """
+
+    def __init__(self, file_visits_ref, file_visits,
+                 runtype='Nvisits_single', dir_config='input/sn_studies',
+                 configName='DD_init'):
+        super().__init__(file_visits_ref=file_visits_ref, file_visits=file_visits,
+                         runtype=runtype, dir_config=dir_config,
+                         configName=configName)
+
+        # build the GUI
+        root = tk.Tk()
+        root.title('DD optimisation for SN')
+
+        # figure where results are displayed
+        self.fig = plt.Figure(figsize=(15, 9), dpi=100)
+        # self.fig.suptitle(self.configName.split('.')[0], fontsize=15)
+        gs = self.fig.add_gridspec(2, 1)
+        self.ax1 = self.fig.add_subplot(gs[0, 0])
+        self.ax2 = self.fig.add_subplot(gs[1, 0])
+
+        self.fig.subplots_adjust(right=0.8, bottom=0.25, top=0.95)
+
+        self.canvas = FigureCanvasTkAgg(self.fig, master=root)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
+        self.canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=False)
+
+        self.toolbar = NavigationToolbar2Tk(self.canvas, root)
+        self.toolbar.update()
+
+        self.plotBudget_zlim()
+        self.plotNvisits()
+        self.ax1.set_xlim(self.zminp, self.zmax)
+        self.ax2.set_xlim(self.zminp, self.zmax)
+        # common font
+        helv36 = tkFont.Font(family='Helvetica', size=15, weight='bold')
+
+        # building the GUI
+        # frames
+        button_frame = tk.Frame(master=root, bg="white")
+        button_frame.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
+        # button_frame.place(relx=.9, rely=.5, anchor="c")
+        button_frame.place(relx=.9, rely=.8, anchor="c")
+
+        fields_frame = tk.Frame(master=root, bg="white")
+        fields_frame.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
+        # button_frame.place(relx=.9, rely=.5, anchor="c")
+        fields_frame.place(relx=.4, rely=.85, anchor="c")
+
+        # entries
+        ents = self.make_entries(button_frame, font=helv36)
+        fields = self.make_fields(fields_frame, font=helv36)
+        # buttons
+        heightb = 3
+        widthb = 6
+
+        nvisits_button = tk.Button(
+            button_frame, text="Nvisits",
+            command=(lambda e=ents, b=fields: self.updateData(e, b)),
+            bg='yellow', height=heightb, width=widthb, fg='blue', font=helv36)
+
+        z_button = tk.Button(
+            button_frame, text="DD budget",
+            command=(lambda e=ents, b=fields: self.updateData_z(e, b)), bg='yellow',
+            height=heightb, width=widthb, fg='red', font=helv36)
+
+        nvisits_night_button = tk.Button(
+            button_frame, text="Nvisits\n Budget",
+            command=(lambda e=ents, b=fields: self.updateData_nvisits_night(e, b)),
+            bg='yellow', height=heightb, width=widthb, fg='green', font=helv36)
+
+        quit_button = tk.Button(button_frame, text="Quit",
+                                command=root.quit, bg='yellow',
+                                height=heightb, width=widthb, fg='black', font=helv36)
+
+        button_frame.columnconfigure(0, weight=1)
+        button_frame.columnconfigure(1, weight=1)
+        button_frame.columnconfigure(2, weight=2)
+
+        nvisits_button.grid(row=4, column=0, sticky=tk.W+tk.E)
+        z_button.grid(row=4, column=1, sticky=tk.W+tk.E)
+        nvisits_night_button.grid(row=5, column=0, sticky=tk.W+tk.E)
+        quit_button.grid(row=5, column=1, sticky=tk.W+tk.E)
+
+        # quit_button.pack(side=tk.BOTTOM)
+        root.mainloop()
+
+    def make_entries(self, frame, font):
+        """
+        Method to make entries available to the GUI
+
+        Parameters
+        ---------------
+        frame: tk.Frame
+          frame where entries will be located
+        font: tkFont
+          font used for the label
+
+        Returns
+        ----------
+        entries: dict
+          dict of entries
+
+        """
+
+        # Nvisits : 2390000
+        tk.Label(frame, text='Nvisits(10 yrs)', bg='white',
+                 fg='black', font=font).grid(row=0)
+        tk.Label(frame, text='zlim', bg='white',
+                 fg='red', font=font).grid(row=1)
+        tk.Label(frame, text='DD budget', bg='white',
+                 fg='blue', font=font).grid(row=2)
+        tk.Label(frame, text='Nvisits/night', bg='white',
+                 fg='green', font=font).grid(row=3)
+
+        entries = {}
+
+        for vv in ['Nvisits', 'zlim', 'DDbudget', 'Nvisits_night']:
+            entries[vv] = tk.Entry(frame, width=10, font=font)
+
+        entries['Nvisits'].insert(10, 2390000)
+        entries['zlim'].insert(10, '0.7')
+        entries['DDbudget'].insert(10, '0.05')
+        entries['Nvisits_night'].insert(10, 50)
+
+        entries['Nvisits'].grid(row=0, column=1)
+        entries['zlim'].grid(row=1, column=1)
+        entries['DDbudget'].grid(row=2, column=1)
+        entries['Nvisits_night'].grid(row=3, column=1)
+
+        return entries
+
+    def make_fields(self, frame, font):
+
+        # frame.grid_configure(minsize=150)
+        frame.grid_rowconfigure(1, weight=1)
+        frame.grid_columnconfigure(20, weight=1)
+        fields = {}
+        tk.Label(frame, text='cadence', bg='white',
+                 fg='black', font=font).grid(row=1, column=0, sticky=tk.W)
+        tk.Label(frame, text='season length', bg='white',
+                 fg='black', font=font).grid(row=2, column=0, sticky=tk.W)
+        tk.Label(frame, text='seasons', bg='white',
+                 fg='black', font=font).grid(row=3, column=0, sticky=tk.W)
+        for icol, fieldname in enumerate(self.Fields):
+            fields[fieldname] = {}
+            fields[fieldname]['state'] = tk.IntVar()
+            fields[fieldname]['check'] = tk.Checkbutton(
+                frame, text=fieldname, font=font, bg='white',
+                highlightthickness=0, bd=0, variable=fields[fieldname]['state'])
+            fields[fieldname]['check'].select()
+            fields[fieldname]['check'].grid(
+                row=0, column=icol+1, sticky=tk.W, padx=0)
+
+            fields[fieldname]['cadence'] = tk.Entry(frame, width=10, font=font)
+            fields[fieldname]['season_length'] = tk.Entry(
+                frame, width=10, font=font)
+            fields[fieldname]['seasons'] = tk.Entry(frame, width=10, font=font)
+
+            for ib, val in enumerate(['cadence', 'season_length', 'seasons']):
+                fields[fieldname][val].insert(
+                    10, str(self.conf_orig[fieldname][val]))
+                fields[fieldname][val].grid(row=1+ib, column=icol+1)
+
+            # fields[fieldname]['season_length'].insert(10, '180')
+            # fields[fieldname]['seasons'].insert(10, '1,2')
+            """
+            fields[fieldname]['cadence'].grid(row=1+id, column=icol+1)
+            fields[fieldname]['season_length'].grid(row=2, column=icol+1)
+            fields[fieldname]['seasons'].grid(row=3, column=icol+1)
+            """
+        return fields
+
+    def updateData(self, entries, fields):
+        """
+        Method to update the plot when buttons are clicked
+
+        Parameters
+        ---------------
+        entries: dict
+           dict of entries
+
+        """
+
+        config = self.dict_from_fields(fields)
+
+        self.Fields = config['Fields']
+        config['Nvisits'] = int(entries['Nvisits'].get())
+        # reset axes
+        self.ax1.cla()
+        self.ax2.cla()
+
+        self.process(config)
+        # plot references
+        self.plotBudget_zlim()
+        self.plotNvisits()
+
+        # plot results of entries
+        ddbudget = float(entries['DDbudget'].get())
+        if ddbudget > 0:
+            zlim = self.plotBudget_zlim_budget(ddbudget)
+            self.plotNvisits_zlim(zlim)
+        # update canvas
+        self.ax1.set_xlim(self.zminp, self.zmax)
+        self.ax2.set_xlim(self.zminp, self.zmax)
+        self.canvas.draw()
+
+    def updateData_z(self, entries, fields):
+        """
+        Method to update the plot when buttons are clicked
+
+        Parameters
+        ---------------
+        entries: dict
+           dict of entries
+
+        """
+
+        config = self.dict_from_fields(fields)
+
+        self.Fields = config['Fields']
+        config['Nvisits'] = int(entries['Nvisits'].get())
+        # reset axes
+        self.ax1.cla()
+        self.ax2.cla()
+
+        self.process(config)
+        # plot references
+        self.plotBudget_zlim()
+        self.plotNvisits()
+
+        # plot results of entries
+        zlim = float(entries['zlim'].get())
+        if zlim > 0:
+            # get the corresponding budget (median)
+            ddbudget = self.interp_z_ddbudget(zlim)
+            zlim = self.plotBudget_zlim_budget(ddbudget)
+            self.plotNvisits_zlim(zlim)
+        # update canvas
+        self.ax1.set_xlim(self.zminp, self.zmax)
+        self.ax2.set_xlim(self.zminp, self.zmax)
+        self.canvas.draw()
+
+    def updateData_nvisits_night(self, entries, fields):
+        """
+        Method to update the plot when buttons are clicked
+
+        Parameters
+        ---------------
+        entries: dict
+           dict of entries
+
+        """
+
+        config = self.dict_from_fields(fields)
+
+        self.Fields = config['Fields']
+        config['Nvisits'] = int(entries['Nvisits'].get())
+        # reset axes
+        self.ax1.cla()
+        self.ax2.cla()
+
+        self.process(config)
+        # plot references
+        self.plotBudget_zlim()
+        self.plotNvisits()
+
+        # plot results of entries
+        nvisits_night = float(entries['Nvisits_night'].get())
+        if nvisits_night > 0:
+            zlim = self.z_ref['COSMOS'][1](nvisits_night)
+            # get the corresponding budget (median)
+            ddbudget = self.interp_z_ddbudget(zlim)
+            zlim = self.plotBudget_zlim_budget(ddbudget)
+            self.plotNvisits_zlim(zlim)
+        # update canvas
+        self.ax1.set_xlim(self.zminp, self.zmax)
+        self.ax2.set_xlim(self.zminp, self.zmax)
+        self.canvas.draw()
