@@ -3,21 +3,41 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from .wrapper import Mod_z
 import tkinter as tk
-#from tkinter import tkFont
 from tkinter import font as tkFont
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
-# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 matplotlib.use('tkagg')
 
 
 class ShowVisits:
+    """
+    class to display nvisits vs redshift
+
+    Parameters
+    ---------------
+    files_visits: str
+      file name containing the number of visits vs redshift
+      for a set of cadences
+    cadence: float,opt
+      cadence chosen (default: 1 day-1)
+    zmin: float, opt
+      min z value (default: 0.1)
+    zmax: float, opt
+       max z value (default: 0.85)
+    dir_config: str, opt
+       location dir of the file
+
+    """
+
     def __init__(self, file_visits, cadence=1., zmin=0.1, zmax=0.85, dir_config='input'):
 
         self.cadence = cadence
         self.zmin = zmin
         self.zmax = zmax
+        # modify the visits
+        # the idea here is to keep the number of visits constant for z>zlim where
+        # zlim is the limit of the use of the band
         data = Mod_z('{}/{}'.format(dir_config, file_visits)).nvisits
 
         # select data for this cadence
@@ -38,12 +58,29 @@ class ShowVisits:
 
         self.z_nvisits = self.interp_z(sel['Nvisits'], sel['z'])
 
-        self.gui()
-
     def interp_z(self, x, y):
+        """
+        Method to perform a 1d interpolator
+
+        Parameters
+        ---------------
+        x: array(float)
+           x values
+        y: array (float)
+           y values
+
+        Returns
+        ----------
+        interp1d(x,y)
+
+        """
         return interp1d(x, y, bounds_error=False, fill_value=0.)
 
     def plotNvisits(self):
+        """
+        Method to plot the number of visits vs redshift (background)
+
+        """
 
         zstep = 0.005
         zvals = np.arange(self.zmin, self.zmax+zstep, zstep)
@@ -62,7 +99,15 @@ class ShowVisits:
         self.ax.set_ylim(0,)
 
     def plotzlim(self, z=0.6):
+        """
+        Method to write the number of visits corresponding to a given redshift
 
+        Parameters
+        ---------------
+        z : float
+          redshift considered
+
+        """
         fontsize = 15
 
         ylims = self.ax.get_ylim()
@@ -78,31 +123,67 @@ class ShowVisits:
                          'Nvisits - ${}$ ={}'.format(b, nvisits_b), fontsize=fontsize, color=self.colors[b])
 
         self.ax.text(0.95*z, 1.5*nvisits,
-                     'z = {}'.format(z), fontsize=fontsize)
+                     'z = {}'.format(np.round(z, 2)), fontsize=fontsize)
         self.ax.arrow(z, 1.4*nvisits, 0., -1.4*nvisits,
                       length_includes_head=True, color='r',
                       head_length=5, head_width=0.01)
         self.ax.set_ylim(0,)
 
     def plotnvisits(self, nvisits):
+        """
+        Method to draw the filter allocation and the redshift limit 
+        corresponding to a total number of visits
 
+        Parameters
+        --------------
+        nvisits: int
+          total number of visits
+
+        """
         # get the redshift from the total number of visits
 
         zlim = self.z_nvisits(nvisits)
-        self.plotzlim(np.round(zlim, 2))
+        # self.plotzlim(np.round(zlim, 2))
+        self.plotzlim(zlim)
 
         self.ax.plot(self.ax.get_xlim(), [nvisits]*2,
                      color='r', linestyle='--')
 
-    def gui(self, z=0.6):
 
+class GUIVisits(ShowVisits):
+    """
+    class building a GUI where plots may be shown and
+    inherits from ShowVisits
+
+    Parameters
+    ---------------
+    files_visits: str
+      file name containing the number of visits vs redshift
+      for a set of cadences
+    cadence: float,opt
+      cadence chosen (default: 1 day-1)
+    zmin: float, opt
+      min z value (default: 0.1)
+    zmax: float, opt
+       max z value (default: 0.85)
+    dir_config: str, opt
+       location dir of the file
+    """
+
+    def __init__(self, file_visits, cadence=1., zmin=0.1, zmax=0.85, dir_config='input'):
+        super().__init__(file_visits, cadence=cadence,
+                         zmin=zmin, zmax=zmax, dir_config=dir_config)
+
+        # build the GUI here
         root = tk.Tk()
+        # figure where the plots will be drawn
         self.fig = plt.Figure(figsize=(15, 6), dpi=100)
         self.ax = self.fig.add_subplot(111)
         leg = 'days$^{-1}$'
         self.fig.suptitle('cadence: {} {}'.format(int(self.cadence), leg))
         self.fig.subplots_adjust(right=0.8)
         self.ax.set_xlim(self.zmin, self.zmax)
+        # define the figure canvas here
         self.canvas = FigureCanvasTkAgg(self.fig, master=root)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
@@ -111,6 +192,8 @@ class ShowVisits:
         self.toolbar = NavigationToolbar2Tk(self.canvas, root)
         self.toolbar.update()
         # self.ax.cla()
+
+        # plot the number of visits vs z
         self.plotNvisits()
 
         # common font
@@ -121,6 +204,7 @@ class ShowVisits:
         button_frame = tk.Frame(master=root, bg="white")
         button_frame.pack(fill=tk.X, side=tk.BOTTOM, expand=False)
         button_frame.place(relx=.9, rely=.5, anchor="c")
+
         # entries
         ents = self.make_entries(button_frame, font=helv36)
 
@@ -150,7 +234,22 @@ class ShowVisits:
         root.mainloop()
 
     def make_entries(self, frame, font):
+        """
+        Method to define entries to the GUI
 
+        Parameters
+        ---------------
+        frame: tk.Frame
+          frame where entries will be located
+        font: tk.Font
+          font for entries
+
+        Returns
+        ----------
+        entries: dict
+          dict of tk.Entry
+
+        """
         tk.Label(frame, text='zlim', bg='white',
                  fg='blue', font=font).grid(row=0)
         tk.Label(frame, text='Nvisits', bg='white',
@@ -168,25 +267,52 @@ class ShowVisits:
         return entries
 
     def updateData_z(self, entries):
+        """
+        Method to update the figure according to request made on entries
+        The number of visits will be plotted here
 
+        Parameters
+        ---------------
+        entries: dict of tk.Entry
+
+        """
+
+        # reset axes
         self.ax.cla()
+        # plot Nvisits vs z
         self.plotNvisits()
 
+        # get the redshift and plot if redshift>0
         z = float(entries['zlim'].get())
         if z > 0:
             self.plotzlim(z=z)
+
         # update canvas
         self.ax.set_xlim(self.zmin, self.zmax)
         self.canvas.draw()
 
     def updateData_nv(self, entries):
+        """
+        Method to update the figure according to request made on entries
+        zlim and filter allocation will be plotted here.
 
+        Parameters
+        ---------------
+        entries: dict of tk.Entry
+
+        """
+
+        # reset axes
         self.ax.cla()
+
+        # plot Nvisits vs z
         self.plotNvisits()
 
+        # get total number of visits and plot if nv>0
         nv = float(entries['Nvisits'].get())
         if nv > 0:
             self.plotnvisits(nvisits=nv)
+
         # update canvas
         self.ax.set_xlim(self.zmin, self.zmax)
         self.canvas.draw()
