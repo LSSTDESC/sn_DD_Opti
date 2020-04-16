@@ -1,7 +1,7 @@
 import os
 from optparse import OptionParser
-from sn_DD_opti.budget import DD_Budget
-from sn_DD_opti.showvisits import ShowVisits
+from sn_DD_opti.budget import GUI_Budget
+from sn_DD_opti.showvisits import GUI_Visits
 
 parser = OptionParser()
 
@@ -17,9 +17,9 @@ nvisits_cadence_season = 'Nvisits_cadence_Nvisits_median_m5_field_filter_season.
 
 
 if opts.show == 'Visits':
-    myvisits = ShowVisits(nvisits_cadence, cadence=opts.cadence)
+    myvisits = GUI_Visits(nvisits_cadence, cadence=opts.cadence)
 
 if opts.show == 'Budget':
-    mybud = DD_Budget(nvisits_cadence,
-                      nvisits_cadence_season,
-                      runtype='Nvisits_single', dir_config='input')
+    mybud = GUI_Budget(nvisits_cadence,
+                       nvisits_cadence_season,
+                       runtype='Nvisits_single', dir_config='input')
