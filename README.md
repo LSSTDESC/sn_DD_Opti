@@ -28,3 +28,15 @@ Copyright (c) 2020, the sn_DD_opti contributors on GitHub, https://github.com/LS
 ntributors.
 All rights reserved.
 ```
+
+## ** How to run this package **
+
+### Modify your PYTHONPATH
+- export PYTHONPATH=sn_DD_opti:$PYTHONPATH
+
+### Two GUIs can be displayed
+#### Nvisits vs zlim
+- python scripts/showGui.py --show Visits --cadence cad (cad is the cadence: default: 3)
+
+#### Budget vs zlim
+- python scripts/showGui.py --show Budget
