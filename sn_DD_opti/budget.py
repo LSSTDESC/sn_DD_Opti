@@ -325,6 +325,8 @@ class DD_Budget:
             df_med['z'], df_med['budget'], bounds_error=False, fill_value=0.0)
         self.interp_z = interpolate.interp1d(
             df_med['z'], df_med['Nvisits_night'], bounds_error=False, fill_value=0.0)
+        self.interp_nvisits_z = interpolate.interp1d(
+            df_med['Nvisits_night'], df_med['z'], bounds_error=False, fill_value=0.0)
 
         """
         self.interpmin = interpolate.interp1d(
@@ -490,7 +492,7 @@ class DD_Budget:
             alltext += ' '
         self.ax1.text(0.3, 0.05, alltext, fontsize=fontsize)
         self.ax1.text(0.3, 0.02, 'Budget: {}'.format(
-            np.round(dd_budget, 2)), fontsize=fontsize)
+            np.round(dd_budget, 3)), fontsize=fontsize)
         return zlim_median
 
     def plotNvisits(self):
@@ -955,17 +957,17 @@ class GUI_Budget(DD_Budget):
         widthb = 6
 
         nvisits_button = tk.Button(
-            button_frame, text="Nvisits",
+            button_frame, text="from budget",
             command=(lambda e=ents, b=fields: self.updateData(e, b)),
             bg='yellow', height=heightb, width=widthb, fg='blue', font=helv36)
 
         z_button = tk.Button(
-            button_frame, text="DD budget",
+            button_frame, text="from zlim",
             command=(lambda e=ents, b=fields: self.updateData_z(e, b)), bg='yellow',
             height=heightb, width=widthb, fg='red', font=helv36)
 
         nvisits_night_button = tk.Button(
-            button_frame, text="Nvisits\n Budget",
+            button_frame, text="from \n Nvisits/night",
             command=(lambda e=ents, b=fields: self.updateData_nvisits_night(e, b)),
             bg='yellow', height=heightb, width=widthb, fg='green', font=helv36)
 
@@ -1167,11 +1169,13 @@ class GUI_Budget(DD_Budget):
 
         # plot results of entries
         nvisits_night = float(entries['Nvisits_night'].get())
+        print('nvisits/night', nvisits_night)
         if nvisits_night > 0:
             zlim = self.z_ref['COSMOS'][1](nvisits_night)
+            print('zlim', zlim)
             # get the corresponding budget (median)
             ddbudget = self.interp_z_ddbudget(zlim)
-            zlim = self.plotBudget_zlim_budget(ddbudget)
+            zlimb = self.plotBudget_zlim_budget(ddbudget)
             self.plotNvisits_zlim(zlim)
         # update canvas
         self.ax1.set_xlim(self.zminp, self.zmax)
