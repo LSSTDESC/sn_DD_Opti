@@ -241,7 +241,7 @@ class DD_Budget:
         """
 
         z = np.arange(0.1, 0.90, 0.01)
-        idx = (self.budget['DD_budget'] < 0.2)
+        idx = (self.budget['DD_budget'] < 0.5)
         idx &= (self.budget['DD_budget'] >= 0.)
         toplot = self.budget[idx]
 
@@ -348,6 +348,7 @@ class DD_Budget:
         self.medz = df_med['z'].values
         self.medvisits = df_med['Nvisits_night'].values
         self.zmax = df_max['z'].max()
+        print('aoaoaooao', self.zmax)
 
     def zlim_Nvisits_single(self, dd_value):
         """
@@ -494,6 +495,7 @@ class DD_Budget:
         self.ax1.text(0.4, 0.10, alltext, fontsize=fontsize)
         self.ax1.text(0.4, 0.05, 'Budget: {}'.format(
             np.round(dd_budget, 3)), fontsize=fontsize)
+        self.ax1.set_ylim(ymax=1.1*dd_budget)
         return zlim_median
 
     def plotNvisits(self):
