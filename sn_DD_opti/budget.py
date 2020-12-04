@@ -41,8 +41,8 @@ class DD_Budget:
         """
         self.runtype = runtype
         self.bands = 'grizy'
-        self.zminp = 0.2
-        self.zmaxp = 0.85
+        self.zminp = 0.4
+        self.zmaxp = 0.9
         self.colors = dict(zip(self.bands, ['c', 'g', 'y', 'r', 'm']))
         self.Fields = ['COSMOS', 'CDFS', 'XMM-LSS', 'ELAIS', 'ADFS1', 'ADFS2']
         self.df_visits_ref = Mod_z(
@@ -452,13 +452,14 @@ class DD_Budget:
 
         """
         zminval = 0.1
+        budget_lim_max = 0.15
         z = np.arange(zminval, 0.9, 0.05)
 
-        self.ax1.set_ylim(ymax=0.10)
+        self.ax1.set_ylim(ymax=budget_lim_max)
 
         self.ax1.set_xlim([zminval+0.01, self.zmax])
         self.ax1.set_ylim([self.interp_z_ddbudget(zminval), np.min(
-            [0.10, self.interp_z_ddbudget(self.zmax)])])
+            [budget_lim_max, self.interp_z_ddbudget(self.zmax)])])
         zb = np.arange(zminval, self.zmax, 0.01)
         self.ax1.fill_between(zb, self.interpmin(
             zb), self.interpmax(zb), color='yellow', alpha=0.5)
@@ -490,8 +491,8 @@ class DD_Budget:
             #              '$z_{lim}^{'+val[0]+'}$='+str(np.round(val[1], 2)), fontsize=fontsize)
             alltext += '$z_{lim}^{'+val[0]+'}$='+str(np.round(val[1], 2))
             alltext += ' '
-        self.ax1.text(0.3, 0.05, alltext, fontsize=fontsize)
-        self.ax1.text(0.3, 0.02, 'Budget: {}'.format(
+        self.ax1.text(0.4, 0.10, alltext, fontsize=fontsize)
+        self.ax1.text(0.4, 0.05, 'Budget: {}'.format(
             np.round(dd_budget, 3)), fontsize=fontsize)
         return zlim_median
 
@@ -519,7 +520,9 @@ class DD_Budget:
         self.ax2.set_xlabel('z')
         self.ax2.set_ylabel('Nvisits')
         self.ax2.grid()
-        self.ax2.legend()
+        # self.ax2.legend()
+        self.ax2.legend(bbox_to_anchor=(-0.07, 0.9),
+                        ncol=1, fontsize=12, frameon=False)
 
     def plotNvisits_zlim(self, zlim=0.5):
 
@@ -532,14 +535,14 @@ class DD_Budget:
         nvisits = int(np.round(self.nvisits_ref[fieldName][season](zlim)))
         yref = 0.9*ylims[1]
         scale = 0.1*ylims[1]
-        self.ax2.text(0.35, yref, 'Nvisits={}'.format(
+        self.ax2.text(0.45, yref, 'Nvisits={}'.format(
             nvisits), fontsize=fontsize)
         self.ax2.plot(xlims, [nvisits]*2, color='red', linestyle='--')
         for io, b in enumerate('grizy'):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(
                 np.round(self.nvisits_band_ref[fieldName][season][b](zlim)))
-            self.ax2.text(0.35, 0.8*ylims[1]-scale*io,
+            self.ax2.text(0.45, 0.8*ylims[1]-scale*io,
                           'Nvisits - ${}$ ={}'.format(b, nvisits_b), fontsize=fontsize, color=self.colors[b])
 
         zl = 'z$_{lim}$'
