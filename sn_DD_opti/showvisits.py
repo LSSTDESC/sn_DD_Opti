@@ -95,7 +95,8 @@ class Show_Visits:
         self.ax.grid()
         self.ax.set_xlabel('z')
         self.ax.set_ylabel('Nvisits')
-        self.ax.legend()
+        #self.ax.legend()
+        self.ax.legend(bbox_to_anchor=(1.2, -0.1),ncol=1,fontsize=12,frameon=False,loc='lower right')
         self.ax.set_ylim(0,)
 
     def plotzlim(self, z=0.6):
@@ -114,12 +115,12 @@ class Show_Visits:
         nvisits = int(np.round(self.dictvisits['nvisits'](z)))
         yref = 0.9*ylims[1]
         scale = 0.1*ylims[1]
-        self.ax.text(0.3, yref, 'Nvisits={}'.format(
+        self.ax.text(0.4, yref, 'Nvisits={}'.format(
             nvisits), fontsize=fontsize)
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(np.round(self.dictvisits[key](z)))
-            self.ax.text(0.3, 0.8*ylims[1]-scale*io,
+            self.ax.text(0.4, 0.8*ylims[1]-scale*io,
                          'Nvisits - ${}$ ={}'.format(b, nvisits_b), fontsize=fontsize, color=self.colors[b])
 
         self.ax.text(0.95*z, 1.5*nvisits,
@@ -213,10 +214,10 @@ class GUI_Visits(Show_Visits):
         widthb = 6
 
         nvisits_button = tk.Button(
-            button_frame, text="Nvisits", command=(lambda e=ents: self.updateData_z(e)),
+            button_frame, text="Nvisits \n from \n zlim", command=(lambda e=ents: self.updateData_z(e)),
             bg='yellow', height=heightb, width=widthb, fg='blue', font=helv36)
 
-        z_button = tk.Button(button_frame, text="zlim", command=(
+        z_button = tk.Button(button_frame, text="zlim \n from \n Nvisits", command=(
             lambda e=ents: self.updateData_nv(e)), bg='yellow', height=heightb, width=widthb, fg='red', font=helv36)
 
         quit_button = tk.Button(button_frame, text="Quit",
