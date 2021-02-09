@@ -15,8 +15,11 @@ class Mod_z:
 
         tabdf = pd.DataFrame(np.copy(tab))
 
+        """
         tabmod = tabdf.groupby(['cadence']).apply(
             lambda x: self.mod(x)).reset_index()
+        """
+        tabmod = tabdf
         ll = []
         for b in 'grizy':
             ll.append('Nvisits_{}'.format(b))
