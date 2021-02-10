@@ -9,9 +9,11 @@ from . import plt
 import tkinter as tk
 # from tkinter import tkFont
 from tkinter import font as tkFont
+from tkinter import ttk
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 from .wrapper import Mod_z
+from matplotlib import transforms
 
 
 class DD_Budget:
@@ -52,8 +54,8 @@ class DD_Budget:
         # self.dir_config = dir_config
         # loading the configuration file for this scenario
         name = '{}/{}.yaml'.format(dir_config, configName)
-        config_orig = yaml.load(open(name), Loader=yaml.FullLoader)
-        #config_orig = yaml.load(open(name))
+        # config_orig = yaml.load(open(name), Loader=yaml.FullLoader)
+        config_orig = yaml.load(open(name))
 
         # little modif here: convert season param to lists
 
@@ -96,7 +98,7 @@ class DD_Budget:
         # estimate the budget
 
         self.budget = self.budget_calc(self.runtype)
-        
+
         # if self.runtype == 'Nvisits_single':
         self.summary_Nvisits_single()
 
@@ -211,7 +213,7 @@ class DD_Budget:
                     self.conf[fieldname]['cadence']
 
                 zvals = self.z[fieldname][season](nvisits_night)
-                
+
                 zname = '{}_{}_{}'.format('z', fieldname, season)
                 vname = '{}_{}_{}'.format('Nvisits', fieldname, season)
                 vname_night = '{}_{}_{}'.format(
@@ -232,7 +234,7 @@ class DD_Budget:
         df_tot['Nvisits'] = df_tot[self.cols].sum(axis=1)
         df_tot['Nvisits_night'] = df_tot[self.cols_night].median(axis=1)
         df_tot['DD_budget'] = df_tot['Nvisits']/self.conf['Nvisits']
-        
+
         return df_tot
 
     def summary_Nvisits_single(self):
@@ -243,7 +245,7 @@ class DD_Budget:
         """
 
         z = np.arange(0.1, 1.0, 0.01)
-        #idx = (self.budget['DD_budget'] < 0.2)
+        # idx = (self.budget['DD_budget'] < 0.2)
         idx = (self.budget['DD_budget'] >= 0.)
         toplot = self.budget[idx]
 
@@ -252,7 +254,7 @@ class DD_Budget:
         plt.plot(toplot['zref'],toplot['DD_budget'],'ko')
         plt.show()
         """
-        
+
         medz = toplot[self.zcols].median(axis=1)  # median redshift limit
         medbud = toplot['DD_budget']
         medvisits = toplot['Nvisits_night']
@@ -303,11 +305,11 @@ class DD_Budget:
         print(df_bud_z[idx][['budget','z']])
         plt.plot(df_bud_z[idx]['z'],df_bud_z[idx]['budget'])
         plt.show()
-        """                   
+        """
         df_min = df_bud_z[idx].groupby(['z']).min().reset_index()
         df_max = df_bud_z[idx].groupby(['z']).max().reset_index()
         df_med = df_bud_z[idx].groupby(['z']).median().reset_index()
-        
+
         """
         colors = dict(zip(['COSMOS','CDFS','XMM-LSS','ELAIS',
                       'ADFS1','ADFS2'],['k','b','r','g','m','orange']))
@@ -361,7 +363,8 @@ class DD_Budget:
         self.medvisits = df_med['Nvisits_night'].values
         self.zmax = df_max['z'].max()
         self.zmax = df_bud_z[idx]['z'].max()
-        #self.zmax = 0.90
+        # self.zmax = 0.90
+
     def zlim_Nvisits_single(self, dd_value):
         """
         Method to estimate some results corresponding to a given DD budget
@@ -470,7 +473,7 @@ class DD_Budget:
         self.ax1.set_ylim(ymax=0.20)
 
         self.ax1.set_xlim([zminval+0.01, self.zmax])
-        
+
         self.ax1.set_ylim([self.interp_z_ddbudget(zminval), np.min(
             [100., self.interp_z_ddbudget(self.zmax)])])
         zb = np.arange(zminval, self.zmax, 0.01)
@@ -480,7 +483,8 @@ class DD_Budget:
         self.ax1.set_ylabel(r'DD budget')
         self.ax1.set_xlabel(r'z$_{lim}$')
         self.ax1.grid()
-        print('hello',self.ax1.get_ylim())
+        print('hello', self.ax1.get_ylim())
+
     def plotBudget_zlim_budget(self, dd_budget):
         """
         Method to plot zlimits (min, median, max) depending on the dd_budget
@@ -491,7 +495,7 @@ class DD_Budget:
           dd budget
 
         """
-        fontsize = 15
+        fontsize = 12
         zlim_median, zlim_min, zlim_max = self.zlim_Nvisits_single(
             dd_budget)
         self.ax1.plot(self.ax1.get_xlim(), [dd_budget]*2, color='r', ls='--')
@@ -504,12 +508,17 @@ class DD_Budget:
             #              '$z_{lim}^{'+val[0]+'}$='+str(np.round(val[1], 2)), fontsize=fontsize)
             alltext += '$z_{lim}^{'+val[0]+'}$='+str(np.round(val[1], 2))
             alltext += '\n '
-        self.ax1.text(1.1, 0.2, alltext, fontsize=fontsize,transform=self.ax1.transAxes)
-        self.ax1.text(1.1, 0.02, 'Budget: {}'.format(
-            np.round(dd_budget, 3)), fontsize=fontsize,transform=self.ax1.transAxes)
+        self.ax1.text(1.05, 0.5, alltext, fontsize=fontsize,
+                      transform=self.ax1.transAxes, color='b', fontweight='bold')
+        self.ax1.text(1.05, 0.2, 'Budget: {}'.format(
+            np.round(dd_budget, 3)), fontsize=fontsize, transform=self.ax1.transAxes, color='r', fontweight='bold')
         return zlim_median
 
     def plotNvisits(self):
+        """
+        Method to plot Nvisits vs redshift for median m5 (references)
+
+        """
 
         fieldName = 'COSMOS'
         season = 1
@@ -518,48 +527,91 @@ class DD_Budget:
         zmax = 0.9
         z = np.arange(zmin, zmax, 0.01)
 
-        self.ax2.plot(z, self.nvisits_ref[fieldName][season](
-            z), color='k', label='sum')
+        lstyle = dict(
+            zip([1, 2, 3, 4], ['solid', 'dotted', 'dashed', 'dashdot']))
 
-        for b in 'grizy':
-            myinterp = self.interp_ref(
-                self.df_visits_ref, 'Nvisits_{}'.format(b))
-            if self.runtype == 'Nvisits_single':
-                self.ax2.plot(z, self.nvisits_band_ref[fieldName][season][b](
-                    z), color=filtercolors[b], label='{}'.format(b))
-            else:
-                self.ax2.plot(z, self.nvisits_band[fieldName][season][b](
-                    z), color=filtercolors[b], label='{}'.format(b))
+        io = -1
+        r = []
+        rb = []
+        cad = []
+
+        for fieldName, cadence in self.fields_cad.items():
+            io += 1
+            lsa = lstyle[io+1]
+            lla, = self.ax2.plot(z, self.nvisits_ref[fieldName][season](
+                z), color='k', label='cadence={}'.format(cadence), ls=lsa)
+            rb.append([lla])
+            cad.append(cadence)
+            # self.ax2.plot(z, self.nvisits_ref[fieldName][season](z), color='k', label='sum')
+
+            for b in 'grizy':
+                color = filtercolors[b]
+                label = '{}'.format(b)
+                myinterp = self.interp_ref(
+                    self.df_visits_ref, 'Nvisits_{}'.format(b))
+                if self.runtype == 'Nvisits_single':
+                    func = self.nvisits_band_ref[fieldName][season][b]
+                else:
+                    func = self.nvisits_band[fieldName][season][b]
+
+                if io == 0:
+                    la, = self.ax2.plot(
+                        z, func(z), color=color, label=label, ls=lsa)
+                    r.append([la])
+                else:
+                    self.ax2.plot(z, func(z), color=color, ls=lsa)
+
+        leg1 = self.ax2.legend([l[0] for l in r], 'grizy',
+                               bbox_to_anchor=(-0.06, -0.01))
         self.ax2.set_xlabel('z')
         self.ax2.set_ylabel('Nvisits')
         self.ax2.grid()
-        self.ax2.legend()
-        #self.ax2.legend(bbox_to_anchor=(1.2, -0.1),ncol=1,fontsize=12,frameon=False,loc='lower right')
-        
-    def plotNvisits_zlim(self, zlim=0.5):
+        # self.ax2.legend()
+        self.ax2.legend([l[0] for l in rb], cad, loc=1)
+        self.ax2.add_artist(leg1)
 
-        fieldName = 'COSMOS'
+    def plotNvisits_zlim(self, zlim=0.5):
+        """
+        Method to estimate Nvisits for zlim
+
+        Parameters
+        ---------------
+        zlim: float, opt
+         redshift limit (default: 0.5)
+        """
+
+        #fieldName = 'COSMOS'
         season = 1
 
-        fontsize = 15
+        fontsize = 12
         ylims = self.ax2.get_ylim()
         xlims = self.ax2.get_xlim()
-        nvisits = int(np.round(self.nvisits_ref[fieldName][season](zlim)))
+
         yref = 0.9*ylims[1]
         scale = 0.1*ylims[1]
-        self.ax2.text(1.1, 0.9, 'Nvisits={}'.format(
-            nvisits), fontsize=fontsize,transform=self.ax2.transAxes)
-        self.ax2.plot(xlims, [nvisits]*2, color='red', linestyle='--')
-        for io, b in enumerate('grizy'):
-            key = 'nvisits_{}'.format(b)
-            nvisits_b = int(
-                np.round(self.nvisits_band_ref[fieldName][season][b](zlim)))
-            #ytext = 0.8*ylims[1]-scale*io
-            ytext = 0.8-0.1*io
-            self.ax2.text(1.1, ytext,
-                          'Nvisits - ${}$ ={}'.format(b, nvisits_b),
-                          fontsize=fontsize,
-                          color=self.colors[b],transform=self.ax2.transAxes)
+
+        it = -1
+
+        colors = 'rk{}'.format(''.join([filtercolors[b] for b in 'grizy']))
+
+        for fieldName in self.conf['Fields']:
+            it += 1
+            words = []
+            words.append(fieldName.ljust(7))
+            func = self.nvisits_ref[fieldName][season]
+            nvisits = int(np.round(func(zlim)))
+            self.ax2.plot(xlims, [nvisits]*2, color='red', linestyle='--')
+            words.append('{}'.format(nvisits))
+
+            for io, b in enumerate('grizy'):
+                key = 'nvisits_{}'.format(b)
+                func = self.nvisits_band_ref[fieldName][season][b]
+                nvisits_b = int(np.round(func(zlim)))
+                words.append('{}'.format(nvisits_b))
+
+            ytext = 1.0-0.1*it
+            self.rainbow_text(1.02, ytext, words, colors,
+                              ax=self.ax2, fontsize=fontsize, fontweight='bold')
 
         zl = 'z$_{lim}$'
         self.ax2.text(zlim-0.05, 0.95*yref,
@@ -894,6 +946,84 @@ class DD_Budget:
 
         return li
 
+    def cadence_fields(self):
+        """
+        Method to estimate the list of fields with the same cadence
+        and to select one field per cadence
+
+        """
+        # get the cadences involved
+        cad_fields = {}
+        print(self.conf)
+        for field in self.conf['Fields']:
+            cadence = int(self.conf[field]['cadence'])
+            if cadence not in cad_fields.keys():
+                cad_fields[cadence] = []
+            cad_fields[cadence].append(field)
+
+        print('cad_fields', cad_fields)
+        fields_cad = {}
+        for key, vals in cad_fields.items():
+            fields_cad[vals[0]] = key
+
+        self.cad_fields = cad_fields
+        self.fields_cad = fields_cad
+
+    def popupmsg(self, msg):
+        LARGE_FONT = ("Verdana", 12)
+        NORM_FONT = ("Verdana", 10)
+        SMALL_FONT = ("Verdana", 8)
+        popup = tk.Tk()
+        popup.wm_title("!")
+        label = ttk.Label(popup, text=msg, font=NORM_FONT)
+        label.pack(side="top", fill="x", pady=10)
+        B1 = ttk.Button(popup, text="Okay", command=popup.destroy)
+        B1.pack()
+        popup.mainloop()
+
+    def rainbow_text(self, x, y, strings, colors, orientation='horizontal',
+                     ax=None, **kwargs):
+        """
+        Take a list of *strings* and *colors* and place them next to each
+        other, with text strings[i] being shown in colors[i].
+
+        Parameters
+        ----------
+        x, y : float
+          Text position in data coordinates.
+        strings : list of str
+          The strings to draw.
+        colors : list of color
+          The colors to use.
+        orientation : {'horizontal', 'vertical'}
+        ax : Axes, optional
+        The Axes to draw into. If None, the current axes will be used.
+        **kwargs
+        All other keyword arguments are passed to plt.text(), so you can
+        set the font size, family, etc.
+        """
+        if ax is None:
+            ax = plt.gca()
+        t = ax.transAxes
+        canvas = ax.figure.canvas
+
+        assert orientation in ['horizontal', 'vertical']
+        if orientation == 'vertical':
+            kwargs.update(rotation=90, verticalalignment='bottom')
+
+        for s, c in zip(strings, colors):
+            text = ax.text(x, y, s + " ", color=c, transform=t, **kwargs)
+
+            # Need to draw to update the text position.
+            text.draw(canvas.get_renderer())
+            ex = text.get_window_extent()
+            if orientation == 'horizontal':
+                t = transforms.offset_copy(
+                    text.get_transform(), x=ex.width, units='dots')
+            else:
+                t = transforms.offset_copy(
+                    text.get_transform(), y=ex.height, units='dots')
+
 
 class GUI_Budget(DD_Budget):
     """
@@ -950,6 +1080,7 @@ class GUI_Budget(DD_Budget):
         self.toolbar.update()
 
         self.plotBudget_zlim()
+        self.cadence_fields()
         self.plotNvisits()
         self.ax1.set_xlim(self.zminp, self.zmax)
         self.ax2.set_xlim(self.zminp, self.zmax)
@@ -1107,12 +1238,14 @@ class GUI_Budget(DD_Budget):
 
         self.Fields = config['Fields']
         config['Nvisits'] = int(entries['Nvisits'].get())
+
         # reset axes
         self.ax1.cla()
         self.ax2.cla()
 
         self.process(config)
         # plot references
+        self.cadence_fields()
         self.plotBudget_zlim()
         self.plotNvisits()
 
@@ -1147,6 +1280,7 @@ class GUI_Budget(DD_Budget):
 
         self.process(config)
         # plot references
+        self.cadence_fields()
         self.plotBudget_zlim()
         self.plotNvisits()
 
