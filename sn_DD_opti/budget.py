@@ -483,7 +483,6 @@ class DD_Budget:
         self.ax1.set_ylabel(r'DD budget')
         self.ax1.set_xlabel(r'z$_{lim}$')
         self.ax1.grid()
-        print('hello', self.ax1.get_ylim())
 
     def plotBudget_zlim_budget(self, dd_budget):
         """
@@ -541,7 +540,8 @@ class DD_Budget:
             lla, = self.ax2.plot(z, self.nvisits_ref[fieldName][season](
                 z), color='k', label='cadence={}'.format(cadence), ls=lsa)
             rb.append([lla])
-            cad.append(cadence)
+            days = 'days$^{-1}$'
+            cad.append('cadence: {} {}'.format(cadence, days))
             # self.ax2.plot(z, self.nvisits_ref[fieldName][season](z), color='k', label='sum')
 
             for b in 'grizy':
@@ -562,13 +562,14 @@ class DD_Budget:
                     self.ax2.plot(z, func(z), color=color, ls=lsa)
 
         leg1 = self.ax2.legend([l[0] for l in r], 'grizy',
-                               bbox_to_anchor=(-0.06, -0.01))
+                               bbox_to_anchor=(-0.06, -0.01), frameon=False)
         self.ax2.set_xlabel('z')
         self.ax2.set_ylabel('Nvisits')
         self.ax2.grid()
         # self.ax2.legend()
-        self.ax2.legend([l[0] for l in rb], cad, loc=1)
+        self.ax2.legend([l[0] for l in rb], cad, loc=2, frameon=False)
         self.ax2.add_artist(leg1)
+        self.ax2.set_ylim(ymax=self.conf['Nvisits_night'])
 
     def plotNvisits_zlim(self, zlim=0.5):
         """
@@ -600,7 +601,8 @@ class DD_Budget:
             words.append(fieldName.ljust(7))
             func = self.nvisits_ref[fieldName][season]
             nvisits = int(np.round(func(zlim)))
-            self.ax2.plot(xlims, [nvisits]*2, color='red', linestyle='--')
+            self.ax2.plot(xlims, [nvisits]*2, color='red',
+                          linestyle='solid', linewidth=0.1)
             words.append('{}'.format(nvisits))
 
             for io, b in enumerate('grizy'):
@@ -765,7 +767,7 @@ class DD_Budget:
         if dd_budget > 0.:
             ax1.plot(ax1.get_xlim(), [dd_budget]*2, color='r', ls='--')
             zlimit = interp_bud_z(dd_budget)
-            print('zlimit', zlimit, dd_budget)
+            #print('zlimit', zlimit, dd_budget)
             ax1.arrow(zlimit, dd_budget, 0., -dd_budget,
                       length_includes_head=True, color='b',
                       head_length=0.005, head_width=0.01)
@@ -954,14 +956,12 @@ class DD_Budget:
         """
         # get the cadences involved
         cad_fields = {}
-        print(self.conf)
         for field in self.conf['Fields']:
             cadence = int(self.conf[field]['cadence'])
             if cadence not in cad_fields.keys():
                 cad_fields[cadence] = []
             cad_fields[cadence].append(field)
 
-        print('cad_fields', cad_fields)
         fields_cad = {}
         for key, vals in cad_fields.items():
             fields_cad[vals[0]] = key
@@ -1129,10 +1129,10 @@ class GUI_Budget(DD_Budget):
         button_frame.columnconfigure(1, weight=1)
         button_frame.columnconfigure(2, weight=2)
 
-        nvisits_button.grid(row=4, column=0, sticky=tk.W+tk.E)
-        z_button.grid(row=4, column=1, sticky=tk.W+tk.E)
-        nvisits_night_button.grid(row=5, column=0, sticky=tk.W+tk.E)
-        quit_button.grid(row=5, column=1, sticky=tk.W+tk.E)
+        nvisits_button.grid(row=5, column=0, sticky=tk.W+tk.E)
+        z_button.grid(row=5, column=1, sticky=tk.W+tk.E)
+        nvisits_night_button.grid(row=6, column=0, sticky=tk.W+tk.E)
+        quit_button.grid(row=6, column=1, sticky=tk.W+tk.E)
 
         # quit_button.pack(side=tk.BOTTOM)
         root.mainloop()
@@ -1155,30 +1155,33 @@ class GUI_Budget(DD_Budget):
 
         """
 
-        # Nvisits : 2390000
-        tk.Label(frame, text='Nvisits(10 yrs)', bg='white',
+        tk.Label(frame, text='Nvisits/night(max)', bg='white',
                  fg='black', font=font).grid(row=0)
+        tk.Label(frame, text='Nvisits(10 yrs)', bg='white',
+                 fg='black', font=font).grid(row=1)
         tk.Label(frame, text='zlim', bg='white',
-                 fg='red', font=font).grid(row=1)
+                 fg='red', font=font).grid(row=2)
         tk.Label(frame, text='DD budget', bg='white',
-                 fg='blue', font=font).grid(row=2)
+                 fg='blue', font=font).grid(row=3)
         tk.Label(frame, text='Nvisits/night', bg='white',
-                 fg='green', font=font).grid(row=3)
+                 fg='green', font=font).grid(row=4)
 
         entries = {}
 
-        for vv in ['Nvisits', 'zlim', 'DDbudget', 'Nvisits_night']:
+        for vv in ['Nvisits', 'zlim', 'DDbudget', 'Nvisits_night', 'Nvisits_night_max']:
             entries[vv] = tk.Entry(frame, width=10, font=font)
 
         entries['Nvisits'].insert(10, 2390000)
+        entries['Nvisits_night_max'].insert(10, 300)
         entries['zlim'].insert(10, '0.7')
         entries['DDbudget'].insert(10, '0.05')
         entries['Nvisits_night'].insert(10, 50)
 
-        entries['Nvisits'].grid(row=0, column=1)
-        entries['zlim'].grid(row=1, column=1)
-        entries['DDbudget'].grid(row=2, column=1)
-        entries['Nvisits_night'].grid(row=3, column=1)
+        entries['Nvisits_night_max'].grid(row=0, column=1)
+        entries['Nvisits'].grid(row=1, column=1)
+        entries['zlim'].grid(row=2, column=1)
+        entries['DDbudget'].grid(row=3, column=1)
+        entries['Nvisits_night'].grid(row=4, column=1)
 
         return entries
 
@@ -1238,6 +1241,7 @@ class GUI_Budget(DD_Budget):
 
         self.Fields = config['Fields']
         config['Nvisits'] = int(entries['Nvisits'].get())
+        config['Nvisits_night'] = int(entries['Nvisits_night_max'].get())
 
         # reset axes
         self.ax1.cla()
@@ -1274,6 +1278,8 @@ class GUI_Budget(DD_Budget):
 
         self.Fields = config['Fields']
         config['Nvisits'] = int(entries['Nvisits'].get())
+        config['Nvisits_night'] = int(entries['Nvisits_night_max'].get())
+
         # reset axes
         self.ax1.cla()
         self.ax2.cla()
@@ -1311,6 +1317,8 @@ class GUI_Budget(DD_Budget):
 
         self.Fields = config['Fields']
         config['Nvisits'] = int(entries['Nvisits'].get())
+        config['Nvisits_night'] = int(entries['Nvisits_night_max'].get())
+
         # reset axes
         self.ax1.cla()
         self.ax2.cla()
@@ -1322,10 +1330,10 @@ class GUI_Budget(DD_Budget):
 
         # plot results of entries
         nvisits_night = float(entries['Nvisits_night'].get())
-        print('nvisits/night', nvisits_night)
+        #print('nvisits/night', nvisits_night)
         if nvisits_night > 0:
             zlim = self.z_ref['COSMOS'][1](nvisits_night)
-            print('zlim', zlim)
+            #print('zlim', zlim)
             # get the corresponding budget (median)
             ddbudget = self.interp_z_ddbudget(zlim)
             zlimb = self.plotBudget_zlim_budget(ddbudget)
