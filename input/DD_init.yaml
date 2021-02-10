@@ -1,4 +1,5 @@
 Nvisits : 2390000 #total number of LSST visits - 10 years
+Nvisits_night: 300 #max number of visits per field and per obs. night
 Fields : ['COSMOS','ELAIS','CDFS','XMM-LSS','ADFS1','ADFS2']
 COSMOS :
   season_length: 6.0 #season length [ months]
