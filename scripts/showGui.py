@@ -9,9 +9,9 @@ parser.add_option("--show", type="str", default='Visits',
                   help="GUI to visualize - Visits or Budget[%default]")
 parser.add_option("--cadence", type="float", default=3.0,
                   help="Cadence - for show Visits only [%default]")
-parser.add_option("--Nvisits_z_file", type="str", default='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_visits.npy',
+parser.add_option("--Nvisits_z_file", type="str", default='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_selb.npy',
                   help="File with Nvisits vs redshift - median field [%default]")
-parser.add_option("--Nvisits_z_field_file", type="str", default='Nvisits_z_fields_-2.0_0.2_error_model_ebvofMW_0.0_visits.npy',
+parser.add_option("--Nvisits_z_field_file", type="str", default='Nvisits_z_fields_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_selb.npy',
                   help="File with Nvisits vs redshift for each field [%default]")
 
 opts, args = parser.parse_args()
