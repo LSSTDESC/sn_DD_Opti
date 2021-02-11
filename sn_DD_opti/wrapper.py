@@ -11,15 +11,15 @@ class Mod_z:
     def __init__(self, fName):
 
         # load the file
+
         tab = np.load(fName, allow_pickle=True)
-
-        tabdf = pd.DataFrame(np.copy(tab))
-
-        """
+       
+        tabdf = pd.DataFrame.from_records(tab)
+        
         tabmod = tabdf.groupby(['cadence']).apply(
-            lambda x: self.mod(x)).reset_index()
-        """
-        tabmod = tabdf
+            lambda x: self.mod(x))
+        
+        #tabmod = tabdf
         ll = []
         for b in 'grizy':
             ll.append('Nvisits_{}'.format(b))
@@ -40,7 +40,7 @@ class Mod_z:
         -----------
         modified grp group
         """
-        for band in 'grizy':
+        for band in 'r':
             what = 'Nvisits_{}'.format(band)
             idx = grp[what] > 1.e-21
             idx &= grp[what] < 1.
@@ -53,4 +53,5 @@ class Mod_z:
                 grp.loc[Index_label, what] = grp.loc[Index_label_p[-1]][what]
             #print('io', grp[what])
 
+        grp['Nvisits_g'] = 2
         return grp

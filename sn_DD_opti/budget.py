@@ -54,8 +54,8 @@ class DD_Budget:
         # self.dir_config = dir_config
         # loading the configuration file for this scenario
         name = '{}/{}.yaml'.format(dir_config, configName)
-        # config_orig = yaml.load(open(name), Loader=yaml.FullLoader)
-        config_orig = yaml.load(open(name))
+        config_orig = yaml.load(open(name), Loader=yaml.FullLoader)
+        #config_orig = yaml.load(open(name))
 
         # little modif here: convert season param to lists
 
@@ -235,6 +235,7 @@ class DD_Budget:
         df_tot['Nvisits_night'] = df_tot[self.cols_night].median(axis=1)
         df_tot['DD_budget'] = df_tot['Nvisits']/self.conf['Nvisits']
 
+        print('budget',df_tot.columns,df_tot[['zref','DD_budget']])
         return df_tot
 
     def summary_Nvisits_single(self):
@@ -248,7 +249,7 @@ class DD_Budget:
         # idx = (self.budget['DD_budget'] < 0.2)
         idx = (self.budget['DD_budget'] >= 0.)
         toplot = self.budget[idx]
-
+        print('hhhhhh',toplot[['zref','DD_budget']])
         """
         print('here',toplot.columns,self.zcols)
         plt.plot(toplot['zref'],toplot['DD_budget'],'ko')
@@ -266,6 +267,7 @@ class DD_Budget:
 
         df_bud_z = pd.DataFrame()
 
+        print('jjjjj',self.zcols)
         for io, col in enumerate(self.zcols):
             idx = toplot[col] >= 0.25
             idx &= toplot[col] <= 0.95
@@ -299,7 +301,7 @@ class DD_Budget:
 
         df_buz_z = df_bud_z.sort_values(by=['budget'])
 
-        idx = df_bud_z['budget'] > 0.
+        idx = df_bud_z['budget'] >= 0.
 
         """
         print(df_bud_z[idx][['budget','z']])
@@ -363,7 +365,8 @@ class DD_Budget:
         self.medvisits = df_med['Nvisits_night'].values
         self.zmax = df_max['z'].max()
         self.zmax = df_bud_z[idx]['z'].max()
-        # self.zmax = 0.90
+        print('yyyy',self.zmax)
+        #self.zmax = 0.90
 
     def zlim_Nvisits_single(self, dd_value):
         """
@@ -468,14 +471,14 @@ class DD_Budget:
 
         """
         zminval = 0.3
-        z = np.arange(zminval, 0.9, 0.05)
+        z = np.arange(zminval, 0.95, 0.05)
 
-        self.ax1.set_ylim(ymax=0.20)
+        self.ax1.set_ylim(ymax=0.50)
 
         self.ax1.set_xlim([zminval+0.01, self.zmax])
 
-        self.ax1.set_ylim([self.interp_z_ddbudget(zminval), np.min(
-            [100., self.interp_z_ddbudget(self.zmax)])])
+        #self.ax1.set_ylim([self.interp_z_ddbudget(zminval), np.min(
+        #    [100., self.interp_z_ddbudget(self.zmax)])])
         zb = np.arange(zminval, self.zmax, 0.01)
         self.ax1.fill_between(zb, self.interpmin(
             zb), self.interpmax(zb), color='yellow', alpha=0.5)
@@ -518,12 +521,10 @@ class DD_Budget:
         Method to plot Nvisits vs redshift for median m5 (references)
 
         """
-
-        fieldName = 'COSMOS'
         season = 1
 
         zmin = 0.1
-        zmax = 0.9
+        zmax = 0.95
         z = np.arange(zmin, zmax, 0.01)
 
         lstyle = dict(
@@ -570,7 +571,8 @@ class DD_Budget:
         self.ax2.legend([l[0] for l in rb], cad, loc=2, frameon=False)
         self.ax2.add_artist(leg1)
         self.ax2.set_ylim(ymax=self.conf['Nvisits_night'])
-
+        print('yyoyoyoyoy',self.ax2.get_xlim())
+        
     def plotNvisits_zlim(self, zlim=0.5):
         """
         Method to estimate Nvisits for zlim
