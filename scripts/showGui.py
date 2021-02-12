@@ -9,6 +9,10 @@ parser.add_option("--show", type="str", default='Visits',
                   help="GUI to visualize - Visits or Budget[%default]")
 parser.add_option("--cadence", type="float", default=3.0,
                   help="Cadence - for show Visits only [%default]")
+parser.add_option("--Nvisits_max", type=int, default=300,
+                  help="Max number of visits for display - for show Visits only [%default]")
+parser.add_option("--zmax", type=float, default=0.95,
+                  help="zmax for display - for show Visits only [%default]")
 parser.add_option("--Nvisits_z_file", type="str", default='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_selb.npy',
                   help="File with Nvisits vs redshift - median field [%default]")
 parser.add_option("--Nvisits_z_field_file", type="str", default='Nvisits_z_fields_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_selb.npy',
@@ -21,7 +25,8 @@ nvisits_cadence_season = opts.Nvisits_z_field_file
 
 
 if opts.show == 'Visits':
-    myvisits = GUI_Visits(nvisits_cadence, cadence=opts.cadence)
+    myvisits = GUI_Visits(
+        nvisits_cadence, cadence=opts.cadence, nvisits_max=opts.Nvisits_max, zmax=opts.zmax)
 
 if opts.show == 'Budget':
     mybud = GUI_Budget(nvisits_cadence,

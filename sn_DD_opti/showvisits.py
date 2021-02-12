@@ -21,6 +21,8 @@ class Show_Visits:
       for a set of cadences
     cadence: float,opt
       cadence chosen (default: 1 day-1)
+    nvisits_max: int, opt
+      max number of vivits in display (default: 300)
     zmin: float, opt
       min z value (default: 0.1)
     zmax: float, opt
@@ -30,9 +32,10 @@ class Show_Visits:
 
     """
 
-    def __init__(self, file_visits, cadence=1., zmin=0.1, zmax=0.85, dir_config='input'):
+    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.1, zmax=0.85, dir_config='input'):
 
         self.cadence = cadence
+        self.nvisits_max = nvisits_max
         self.zmin = zmin
         self.zmax = zmax
         # modify the visits
@@ -46,7 +49,7 @@ class Show_Visits:
 
         # prepare interpolators for plot
         self.zmin = np.min(sel['z'])
-        self.zmax = np.max(sel['z'])
+        #self.zmax = np.max(sel['z'])
         self.dictvisits = {}
         self.dictvisits['nvisits'] = self.interp_z(sel['z'], sel['Nvisits'])
 
@@ -95,9 +98,13 @@ class Show_Visits:
         self.ax.grid()
         self.ax.set_xlabel('z')
         self.ax.set_ylabel('Nvisits')
-        #self.ax.legend()
-        self.ax.legend(bbox_to_anchor=(1.2, -0.1),ncol=1,fontsize=12,frameon=False,loc='lower right')
+        # self.ax.legend()
+        self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
+                       fontsize=12, frameon=False, loc='lower right')
         self.ax.set_ylim(0,)
+        if self.nvisits_max > 0:
+            self.ax.set_ylim(ymax=self.nvisits_max)
+        self.ax.set_xlim(xmax=self.zmax)
 
     def plotzlim(self, z=0.6):
         """
@@ -115,12 +122,12 @@ class Show_Visits:
         nvisits = int(np.round(self.dictvisits['nvisits'](z)))
         yref = 0.9*ylims[1]
         scale = 0.1*ylims[1]
-        self.ax.text(0.4, yref, 'Nvisits={}'.format(
+        self.ax.text(0.5, yref, 'Nvisits={}'.format(
             nvisits), fontsize=fontsize)
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(np.round(self.dictvisits[key](z)))
-            self.ax.text(0.4, 0.8*ylims[1]-scale*io,
+            self.ax.text(0.5, 0.8*ylims[1]-scale*io,
                          'Nvisits - ${}$ ={}'.format(b, nvisits_b), fontsize=fontsize, color=self.colors[b])
 
         self.ax.text(0.95*z, 1.5*nvisits,
@@ -163,6 +170,8 @@ class GUI_Visits(Show_Visits):
       for a set of cadences
     cadence: float,opt
       cadence chosen (default: 1 day-1)
+    nvisits_max: int, opt
+      max number of visits for display (default: 300)
     zmin: float, opt
       min z value (default: 0.1)
     zmax: float, opt
@@ -171,8 +180,8 @@ class GUI_Visits(Show_Visits):
        location dir of the file
     """
 
-    def __init__(self, file_visits, cadence=1., zmin=0.1, zmax=0.85, dir_config='input'):
-        super().__init__(file_visits, cadence=cadence,
+    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.1, zmax=0.85, dir_config='input'):
+        super().__init__(file_visits, cadence=cadence, nvisits_max=nvisits_max,
                          zmin=zmin, zmax=zmax, dir_config=dir_config)
 
         # build the GUI here
