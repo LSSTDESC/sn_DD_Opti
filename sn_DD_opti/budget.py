@@ -129,6 +129,7 @@ class DD_Budget:
         nvisits = {}
         nvisits_band = {}
         z = {}
+        print('hello', df_tot)
         for fieldname in fieldnames:
             nvisits[fieldname] = {}
             nvisits_band[fieldname] = {}
@@ -490,6 +491,8 @@ class DD_Budget:
         self.ax1.set_xlabel(r'z$_{lim}$')
         self.ax1.grid()
         ymax = self.interpmax(self.zmax)
+        ymax = np.max(self.interpmax(zb))
+        print('ooo', ymax)
         self.ax1.set_ylim(ymax=ymax)
 
     def plotBudget_zlim_budget(self, dd_budget):
@@ -601,6 +604,7 @@ class DD_Budget:
 
         colors = 'rk{}'.format(''.join([filtercolors[b] for b in 'grizy']))
 
+        print('allo', self.conf['Fields'])
         for fieldName in self.conf['Fields']:
             it += 1
             words = []
@@ -1117,9 +1121,12 @@ class GUI_Budget(DD_Budget):
         # plot results of entries
         nvisits_night = float(entries['Nvisits_night'].get())
         #print('nvisits/night', nvisits_night)
+        #zlim = {}
         if nvisits_night > 0:
-            zlim = self.z_ref['COSMOS'][1](nvisits_night)
+            # for field in self.conf['Fields']:
+            #    zlim[field] = self.z_ref[field][1](nvisits_night)
             #print('zlim', zlim)
+            zlim = self.z_ref['COSMOS'][1](nvisits_night)
             # get the corresponding budget (median)
             ddbudget = self.interp_z_ddbudget(zlim)
             zlimb = self.plotBudget_zlim_budget(ddbudget)
