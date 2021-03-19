@@ -44,7 +44,7 @@ class DD_Budget:
         self.runtype = runtype
         self.bands = 'grizy'
         self.zminp = 0.5
-        self.zmaxp = 1.0
+        self.zmaxp = 0.97
         self.colors = dict(zip(self.bands, ['c', 'g', 'y', 'r', 'm']))
         self.Fields = ['COSMOS', 'CDFS', 'XMM-LSS', 'ELAIS', 'ADFS1', 'ADFS2']
 
@@ -54,7 +54,7 @@ class DD_Budget:
         # self.dir_config = dir_config
         # loading the configuration file for this scenario
         name = '{}/{}.yaml'.format(dir_config, configName)
-        #config_orig = yaml.load(open(name), Loader=yaml.FullLoader)
+        # config_orig = yaml.load(open(name), Loader=yaml.FullLoader)
         config_orig = yaml.load(open(name))
 
         # little modif here: convert season param to lists
@@ -99,7 +99,7 @@ class DD_Budget:
 
         self.budget = self.budget_calc(self.runtype)
 
-        #print('hello self budget', self.budget)
+        # print('hello self budget', self.budget)
         # if self.runtype == 'Nvisits_single':
         self.summary_Nvisits_single()
 
@@ -130,7 +130,7 @@ class DD_Budget:
         nvisits = {}
         nvisits_band = {}
         z = {}
-        print('hello', df_tot)
+        # print('hello', df_tot)
         for fieldname in fieldnames:
             nvisits[fieldname] = {}
             nvisits_band[fieldname] = {}
@@ -192,8 +192,8 @@ class DD_Budget:
          DD_budget: DD budget
 
         """
-
-        zr = np.arange(0.5, self.zmaxp, 0.01)
+        zstep = 0.01
+        zr = np.arange(0.5, self.zmaxp+zstep, zstep)
         df_tot = pd.DataFrame()
 
         """
@@ -215,8 +215,8 @@ class DD_Budget:
                     self.conf[fieldname]['cadence']
 
                 zvals = self.z[fieldname][season](nvisits_night)
-                print('ici', fieldname, season,
-                      nvisits_season, zr, zvals, nvisits_night)
+                # print('ici', fieldname, season,
+                #      nvisits_season, zr, zvals, nvisits_night)
                 zvals = zr
                 zname = '{}_{}_{}'.format('z', fieldname, season)
                 vname = '{}_{}_{}'.format('Nvisits', fieldname, season)
@@ -239,7 +239,7 @@ class DD_Budget:
         df_tot['Nvisits_night'] = df_tot[self.cols_night].median(axis=1)
         df_tot['DD_budget'] = df_tot['Nvisits']/self.conf['Nvisits']
 
-        #print('hello', df_tot[['Nvisits', 'DD_budget']])
+        # print('hello', df_tot[['Nvisits', 'DD_budget']])
         return df_tot
 
     def summary_Nvisits_single(self):
@@ -248,8 +248,8 @@ class DD_Budget:
         the number of visits and the redshift limits.
 
         """
-
-        z = np.arange(0.1, 1.0, 0.01)
+        zstep = 0.01
+        z = np.arange(0.1, self.zmaxp+zstep, zstep)
         idx = (self.budget['DD_budget'] >= 0.)
         toplot = self.budget[idx]
         """
@@ -258,7 +258,7 @@ class DD_Budget:
         plt.show()
         """
 
-        #print('hhhh', toplot, self.zcols)
+        # print('hhhh', toplot, self.zcols)
         medz = toplot[self.zcols].median(axis=1)  # median redshift limit
         medbud = toplot['DD_budget']
         medvisits = toplot['Nvisits_night']
@@ -272,7 +272,7 @@ class DD_Budget:
 
         for io, col in enumerate(self.zcols):
             idx = toplot[col] >= 0.25
-            idx &= toplot[col] <= 1.0
+            idx &= toplot[col] <= self.zmaxp+0.01
             # plt.plot(toplot[idx][col],toplot[idx]['DD_budget'],color='k')
             """
             interp_ddbudget = interpolate.interp1d(toplot[idx]['DD_budget'],
@@ -282,7 +282,7 @@ class DD_Budget:
                                                         toplot[idx]['Nvisits_night'],
                                                         bounds_error=False,fill_value=0)
             """
-            #print('there we go', col, toplot[idx][col])
+            # print('there we go', col, toplot[idx][col])
 
             """
             import matplotlib.pyplot as plt
@@ -304,7 +304,7 @@ class DD_Budget:
             df.loc[:, 'name'] = col
             df.loc[:, 'Nvisits_night'] = interp_night(df['budget'])
 
-            #print('hhh', df[['z', 'budget']])
+            # print('hhh', df[['z', 'budget']])
             # df_bud_z = pd.concat([df_bud_z, df], sort=False)
             df_bud_z = pd.concat([df_bud_z, df])
 
@@ -339,7 +339,7 @@ class DD_Budget:
             fieldname = col.split('_')[1]
             plt.plot(toplot[idx][col], toplot[idx]
                      ['DD_budget'], color=colors[fieldname])
-        
+
         plt.plot(df_min['z'], df_min['budget'])
         plt.plot(df_max['z'], df_max['budget'])
         plt.show()
@@ -384,7 +384,6 @@ class DD_Budget:
         self.medvisits = df_med['Nvisits_night'].values
         self.zmax = df_max['z'].max()
         self.zmax = df_bud_z[idx]['z'].max()
-        self.zmax = 1.0
 
     def zlim_Nvisits_single(self, dd_value):
         """
@@ -506,8 +505,9 @@ class DD_Budget:
         self.ax1.grid()
         ymax = self.interpmax(self.zmax)
         ymax = np.max(self.interpmax(zb))
-        print('ooo', ymax)
-        self.ax1.set_ylim(ymax=ymax)
+        print('ooo', ymax, self.zmax)
+        self.ax1.set_ylim(ymax=1.1*ymax)
+        self.ax1.set_xlim(xmax=self.zmax)
 
     def plotBudget_zlim_budget(self, dd_budget):
         """
@@ -522,7 +522,8 @@ class DD_Budget:
         fontsize = 12
         zlim_median, zlim_min, zlim_max = self.zlim_Nvisits_single(
             dd_budget)
-        self.ax1.plot(self.ax1.get_xlim(), [dd_budget]*2, color='r', ls='--')
+        self.ax1.plot(self.ax1.get_xlim(), [
+                      dd_budget]*2, color='r', ls='--')
         alltext = ''
         for ip, val in enumerate([('min', zlim_min), ('median', zlim_median), ('max', zlim_max)]):
             self.ax1.arrow(val[1], dd_budget, 0., -dd_budget,
@@ -545,9 +546,10 @@ class DD_Budget:
         """
         season = 1
 
+        zstep = 0.01
         zmin = 0.1
         zmax = self.zmax
-        z = np.arange(zmin, zmax, 0.01)
+        z = np.arange(zmin, zmax+zstep, zstep)
 
         lstyle = dict(
             zip([1, 2, 3, 4], ['solid', 'dotted', 'dashed', 'dashdot']))
@@ -593,6 +595,8 @@ class DD_Budget:
         self.ax2.legend([l[0] for l in rb], cad, loc=2, frameon=False)
         self.ax2.add_artist(leg1)
         self.ax2.set_ylim(ymax=self.conf['Nvisits_night'])
+        self.ax2.set_xlim(xmax=self.zmaxp)
+        print('hhh', self.ax2.get_xlim())
 
     def plotNvisits_zlim(self, zlim=0.5):
         """
@@ -604,7 +608,7 @@ class DD_Budget:
          redshift limit (default: 0.5)
         """
 
-        #fieldName = 'COSMOS'
+        # fieldName = 'COSMOS'
         season = 1
 
         fontsize = 12
@@ -886,7 +890,7 @@ class GUI_Budget(DD_Budget):
         self.plotBudget_zlim()
         self.cadence_fields()
         self.plotNvisits()
-        self.zmax = 1.
+        self.zmax = 0.97
         self.ax1.set_xlim(self.zminp, self.zmax)
         self.ax2.set_xlim(self.zminp, self.zmax)
         # common font
@@ -1135,12 +1139,12 @@ class GUI_Budget(DD_Budget):
 
         # plot results of entries
         nvisits_night = float(entries['Nvisits_night'].get())
-        #print('nvisits/night', nvisits_night)
-        #zlim = {}
+        # print('nvisits/night', nvisits_night)
+        # zlim = {}
         if nvisits_night > 0:
             # for field in self.conf['Fields']:
             #    zlim[field] = self.z_ref[field][1](nvisits_night)
-            #print('zlim', zlim)
+            # print('zlim', zlim)
             zlim = self.z_ref['COSMOS'][1](nvisits_night)
             # get the corresponding budget (median)
             ddbudget = self.interp_z_ddbudget(zlim)
