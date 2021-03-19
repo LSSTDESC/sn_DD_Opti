@@ -44,7 +44,7 @@ class DD_Budget:
         self.runtype = runtype
         self.bands = 'grizy'
         self.zminp = 0.5
-        self.zmaxp = 0.95
+        self.zmaxp = 1.0
         self.colors = dict(zip(self.bands, ['c', 'g', 'y', 'r', 'm']))
         self.Fields = ['COSMOS', 'CDFS', 'XMM-LSS', 'ELAIS', 'ADFS1', 'ADFS2']
 
@@ -99,6 +99,7 @@ class DD_Budget:
 
         self.budget = self.budget_calc(self.runtype)
 
+        #print('hello self budget', self.budget)
         # if self.runtype == 'Nvisits_single':
         self.summary_Nvisits_single()
 
@@ -192,7 +193,7 @@ class DD_Budget:
 
         """
 
-        zr = np.arange(0.1, 0.95, 0.05)
+        zr = np.arange(0.5, self.zmaxp, 0.01)
         df_tot = pd.DataFrame()
 
         """
@@ -214,7 +215,9 @@ class DD_Budget:
                     self.conf[fieldname]['cadence']
 
                 zvals = self.z[fieldname][season](nvisits_night)
-
+                print('ici', fieldname, season,
+                      nvisits_season, zr, zvals, nvisits_night)
+                zvals = zr
                 zname = '{}_{}_{}'.format('z', fieldname, season)
                 vname = '{}_{}_{}'.format('Nvisits', fieldname, season)
                 vname_night = '{}_{}_{}'.format(
@@ -236,6 +239,7 @@ class DD_Budget:
         df_tot['Nvisits_night'] = df_tot[self.cols_night].median(axis=1)
         df_tot['DD_budget'] = df_tot['Nvisits']/self.conf['Nvisits']
 
+        #print('hello', df_tot[['Nvisits', 'DD_budget']])
         return df_tot
 
     def summary_Nvisits_single(self):
@@ -254,6 +258,7 @@ class DD_Budget:
         plt.show()
         """
 
+        #print('hhhh', toplot, self.zcols)
         medz = toplot[self.zcols].median(axis=1)  # median redshift limit
         medbud = toplot['DD_budget']
         medvisits = toplot['Nvisits_night']
@@ -267,7 +272,7 @@ class DD_Budget:
 
         for io, col in enumerate(self.zcols):
             idx = toplot[col] >= 0.25
-            idx &= toplot[col] <= 0.95
+            idx &= toplot[col] <= 1.0
             # plt.plot(toplot[idx][col],toplot[idx]['DD_budget'],color='k')
             """
             interp_ddbudget = interpolate.interp1d(toplot[idx]['DD_budget'],
@@ -276,6 +281,14 @@ class DD_Budget:
             interp_night = interpolate.interp1d(toplot[idx]['DD_budget'],
                                                         toplot[idx]['Nvisits_night'],
                                                         bounds_error=False,fill_value=0)
+            """
+            #print('there we go', col, toplot[idx][col])
+
+            """
+            import matplotlib.pyplot as plt
+            plt.plot(toplot[idx][col], toplot[idx][col])
+            print('hhh', toplot[idx][[col, 'DD_budget']])
+            plt.show()
             """
             interp_ddbudget = interpolate.interp1d(toplot[idx][col],
                                                    toplot[idx]['DD_budget'],
@@ -291,6 +304,7 @@ class DD_Budget:
             df.loc[:, 'name'] = col
             df.loc[:, 'Nvisits_night'] = interp_night(df['budget'])
 
+            #print('hhh', df[['z', 'budget']])
             # df_bud_z = pd.concat([df_bud_z, df], sort=False)
             df_bud_z = pd.concat([df_bud_z, df])
 
@@ -370,7 +384,7 @@ class DD_Budget:
         self.medvisits = df_med['Nvisits_night'].values
         self.zmax = df_max['z'].max()
         self.zmax = df_bud_z[idx]['z'].max()
-        self.zmax = 0.90
+        self.zmax = 1.0
 
     def zlim_Nvisits_single(self, dd_value):
         """
@@ -475,7 +489,7 @@ class DD_Budget:
 
         """
         zminval = 0.3
-        z = np.arange(zminval, 0.95, 0.05)
+        z = np.arange(zminval, self.zmax, 0.05)
 
         self.ax1.set_ylim(ymax=0.50)
 
@@ -532,7 +546,7 @@ class DD_Budget:
         season = 1
 
         zmin = 0.1
-        zmax = 0.95
+        zmax = self.zmax
         z = np.arange(zmin, zmax, 0.01)
 
         lstyle = dict(
@@ -872,6 +886,7 @@ class GUI_Budget(DD_Budget):
         self.plotBudget_zlim()
         self.cadence_fields()
         self.plotNvisits()
+        self.zmax = 1.
         self.ax1.set_xlim(self.zminp, self.zmax)
         self.ax2.set_xlim(self.zminp, self.zmax)
         # common font
