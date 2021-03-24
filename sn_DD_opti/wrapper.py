@@ -13,12 +13,12 @@ class Mod_z:
         # load the file
 
         tab = np.load(fName, allow_pickle=True)
-       
+
         tabdf = pd.DataFrame.from_records(tab)
-        
+
         tabmod = tabdf.groupby(['cadence']).apply(
             lambda x: self.mod(x))
-        
+
         #tabmod = tabdf
         ll = []
         for b in 'grizy':
