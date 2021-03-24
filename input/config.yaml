@@ -1,5 +1,5 @@
 frac_DDF : 0.06 #DDF fraction
-Nvisits : 239000 #total number of LSST visits - 10 years
+Nvisits : 2390000 #total number of LSST visits - 10 years
 COSMOS :
   season_length: 6. #season length [ months]
   cadence: 1 #cadence [days]
@@ -14,7 +14,7 @@ DDF_not_COSMOS:
   Nvisits: 80 #number of visits per obs night
 AGN:
   season_length:  6.0  #season length [ months]-could be 5.25
-  cadence: 3 #cadence [days]
-  Nfields: 0 #number of fields per season
+  cadence: 2 #cadence [days]
+  Nfields: 4 #number of fields per season
   Nseasons: 10 #number of seasons	
   Nvisits: 18 #number of visits per obs night - see AGN paper
