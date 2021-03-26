@@ -13,9 +13,9 @@ parser.add_option("--Nvisits_max", type=int, default=300,
                   help="Max number of visits for display - for show Visits only [%default]")
 parser.add_option("--zmax", type=float, default=0.95,
                   help="zmax for display - for show Visits only [%default]")
-parser.add_option("--Nvisits_z_file", type="str", default='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_selb.npy',
+parser.add_option("--Nvisits_z_file", type="str", default='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_sela.npy',
                   help="File with Nvisits vs redshift - median field [%default]")
-parser.add_option("--Nvisits_z_field_file", type="str", default='Nvisits_z_fields_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_selb.npy',
+parser.add_option("--Nvisits_z_field_file", type="str", default='Nvisits_z_fields_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_sela.npy',
                   help="File with Nvisits vs redshift for each field [%default]")
 
 opts, args = parser.parse_args()

@@ -32,7 +32,7 @@ class Show_Visits:
 
     """
 
-    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.1, zmax=0.85, dir_config='input'):
+    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_config='input'):
 
         self.cadence = cadence
         self.nvisits_max = nvisits_max
@@ -45,6 +45,7 @@ class Show_Visits:
 
         # select data for this cadence
         idx = np.abs(data['cadence']-self.cadence) < 1.e-5
+        idx &= data['z'] >= self.zmin
         sel = data[idx]
 
         # prepare interpolators for plot
@@ -96,8 +97,8 @@ class Show_Visits:
             self.ax.plot(zvals, self.dictvisits[key](
                 zvals), color=self.colors[b], label='${}$-band'.format(b))
         self.ax.grid()
-        self.ax.set_xlabel('z')
-        self.ax.set_ylabel('Nvisits')
+        self.ax.set_xlabel('$z_{complete}$')
+        self.ax.set_ylabel('$N_{visits}$')
         # self.ax.legend()
         self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
                        fontsize=12, frameon=False, loc='lower right')
@@ -122,16 +123,18 @@ class Show_Visits:
         nvisits = int(np.round(self.dictvisits['nvisits'](z)))
         yref = 0.9*ylims[1]
         scale = 0.1*ylims[1]
-        self.ax.text(0.5, yref, 'Nvisits={}'.format(
-            nvisits), fontsize=fontsize)
+        nvstr = 'N_{visits}'
+        zstr = 'z_{complete}'
+        self.ax.text(0.6, yref, '${}$ = {}'.format(nvstr,
+                                                   nvisits), fontsize=fontsize)
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(np.round(self.dictvisits[key](z)))
-            self.ax.text(0.5, 0.8*ylims[1]-scale*io,
-                         'Nvisits - ${}$ ={}'.format(b, nvisits_b), fontsize=fontsize, color=self.colors[b])
+            self.ax.text(0.6, 0.8*ylims[1]-scale*io,
+                         '${}^{}$ ={}'.format(nvstr, b, nvisits_b), fontsize=fontsize, color=self.colors[b])
 
         self.ax.text(0.95*z, 1.5*nvisits,
-                     'z = {}'.format(np.round(z, 2)), fontsize=fontsize)
+                     '${}$ = {}'.format(zstr, np.round(z, 2)), fontsize=fontsize)
         self.ax.arrow(z, 1.4*nvisits, 0., -1.4*nvisits,
                       length_includes_head=True, color='r',
                       head_length=5, head_width=0.01)
@@ -180,7 +183,7 @@ class GUI_Visits(Show_Visits):
        location dir of the file
     """
 
-    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.1, zmax=0.85, dir_config='input'):
+    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_config='input'):
         super().__init__(file_visits, cadence=cadence, nvisits_max=nvisits_max,
                          zmin=zmin, zmax=zmax, dir_config=dir_config)
 
@@ -260,7 +263,7 @@ class GUI_Visits(Show_Visits):
           dict of tk.Entry
 
         """
-        tk.Label(frame, text='zlim', bg='white',
+        tk.Label(frame, text='zcomplete', bg='white',
                  fg='blue', font=font).grid(row=0)
         tk.Label(frame, text='Nvisits', bg='white',
                  fg='red', font=font).grid(row=1)
