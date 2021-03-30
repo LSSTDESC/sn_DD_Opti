@@ -14,6 +14,8 @@ from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 from .wrapper import Mod_z
 from matplotlib import transforms
+import os
+from sn_rate import SN_Rate
 
 
 class DD_Budget:
@@ -46,7 +48,6 @@ class DD_Budget:
         self.zminp = 0.5
         self.zmaxp = 0.97
         self.colors = dict(zip(self.bands, ['c', 'g', 'y', 'r', 'm']))
-        self.Fields = ['COSMOS', 'CDFS', 'XMM-LSS', 'ELAIS', 'ADFS1', 'ADFS2']
 
         self.df_visits_ref = Mod_z(
             '{}/{}'.format(dir_config, file_visits_ref)).nvisits
@@ -59,6 +60,9 @@ class DD_Budget:
 
         # little modif here: convert season param to lists
 
+        self.Fields = np.unique(config_orig['Fields'])
+        print('hello', name, self.Fields)
+
         self.conf_orig = config_orig
         config = copy.deepcopy(config_orig)
 
@@ -66,8 +70,45 @@ class DD_Budget:
             config[field]['seasons'] = self.getSeasons(
                 config[field]['seasons'])
 
+         # this is to estimate the season length as a function of the number of visits per obs night
+        self.seasonLength_nvisits = self.load_SL_Nv(
+            '{}/seasonlength_nvisits.npy'.format(dir_config))
+
         self.process(config)
+
+        self.sn_rate = SN_Rate()
         # self.gui()
+
+    def load_SL_Nv(self, fi):
+        """
+        Method to load and interpolate season length (max) vs nvisits
+
+        Parameters
+        ---------------
+        fi: str
+           input file
+
+        Returns
+        -----------
+        dict of interpolator (key: field name)
+
+        """
+
+        dictout = {}
+        if not os.path.exists(fi):
+            print(fi, ': this file does not exist')
+        else:
+            tab = np.load(fi)
+            for field in self.Fields:
+                idx = tab['name'] == field
+                sel = tab[idx]
+                if len(sel) == 0:
+                    print('problem here: could not find data for', field)
+                else:
+                    dictout[field] = interpolate.interp1d(
+                        sel['nvisits'], sel['season_length'], fill_value=0.0, bounds_error=False)
+
+        return dictout
 
     def process(self, config):
         """
@@ -210,8 +251,15 @@ class DD_Budget:
                     nvisits_night = self.nvisits_ref[fieldname][season](zr)
                 else:
                     nvisits_night = self.nvisits[fieldname][season](zr)
+
+                # estimate the season length here depending on the number of visits
+                season_length = np.array(self.seasonLength_nvisits[fieldname](
+                    nvisits_night)/30.)
+                season_length[season_length >=
+                              self.conf_orig[fieldname]['season_length']] = 6.
+
                 nvisits_season = nvisits_night*30 * \
-                    self.conf[fieldname]['season_length'] / \
+                    season_length / \
                     self.conf[fieldname]['cadence']
 
                 zvals = self.z[fieldname][season](nvisits_night)
@@ -525,14 +573,19 @@ class DD_Budget:
         self.ax1.plot(self.ax1.get_xlim(), [
                       dd_budget]*2, color='r', ls='--')
         alltext = ''
-        for ip, val in enumerate([('min', zlim_min), ('median', zlim_median), ('max', zlim_max)]):
+        n_SN = int(self.nSN(self.conf, zlim_median))
+        # for ip, val in enumerate([('min', zlim_min), ('median', zlim_median), ('max', zlim_max)]):
+        for ip, val in enumerate([('$z_{complete}^{median}$', zlim_median), ('$N_{SN}$', n_SN)]):
             self.ax1.arrow(val[1], dd_budget, 0., -dd_budget,
                            length_includes_head=True, color='b',
                            head_length=0.005, head_width=0.01)
             # self.ax1.text(0.35, 0.05-0.01*ip,
             #              '$z_{lim}^{'+val[0]+'}$='+str(np.round(val[1], 2)), fontsize=fontsize)
-            alltext += '$z_{lim}^{'+val[0]+'}$='+str(np.round(val[1], 2))
-            alltext += '\n '
+            tt = 'lim'
+            tt = 'complete'
+            #alltext += '$z_{'+tt+'}^{'+val[0]+'}$='+str(np.round(val[1], 2))
+            alltext += '{}={}'.format(val[0], str(np.round(val[1], 2)))
+            alltext += '\n \n'
         self.ax1.text(1.2, 0.5, alltext, fontsize=fontsize,
                       transform=self.ax1.transAxes, color='b', fontweight='bold')
         self.ax1.text(1.2, 0.2, 'Budget: {}'.format(
@@ -596,7 +649,6 @@ class DD_Budget:
         self.ax2.add_artist(leg1)
         self.ax2.set_ylim(ymax=self.conf['Nvisits_night'])
         self.ax2.set_xlim(xmax=self.zmaxp)
-        print('hhh', self.ax2.get_xlim())
 
     def plotNvisits_zlim(self, zlim=0.5):
         """
@@ -622,13 +674,17 @@ class DD_Budget:
 
         colors = 'rk{}'.format(''.join([filtercolors[b] for b in 'grizy']))
 
-        print('allo', self.conf['Fields'])
         for fieldName in self.conf['Fields']:
             it += 1
             words = []
             words.append(fieldName.ljust(7))
             func = self.nvisits_ref[fieldName][season]
             nvisits = int(np.round(func(zlim)))
+            seas_length = self.seasonLength_nvisits[fieldName](
+                nvisits)/30.
+            self.conf[fieldName]['season_length'] = np.round(
+                np.min([seas_length, self.conf_orig[fieldName]['season_length']]), 1)
+
             self.ax2.plot(xlims, [nvisits]*2, color='red',
                           linestyle='solid', linewidth=0.1)
             words.append('{}'.format(nvisits))
@@ -643,7 +699,9 @@ class DD_Budget:
             self.rainbow_text(1.12, ytext, words, colors,
                               ax=self.ax2, fontsize=fontsize, fontweight='bold')
 
-        zl = 'z$_{lim}$'
+        ttxt = 'lim'
+        ttxt = 'complete'
+        zl = 'z$_{'+ttxt+'}$'
         self.ax2.text(zlim-0.05, 0.95*yref,
                       '{} = {}'.format(zl, np.round(zlim, 2)), fontsize=fontsize)
         self.ax2.arrow(zlim, 0.9*yref, 0., -0.9*yref,
@@ -911,6 +969,7 @@ class GUI_Budget(DD_Budget):
         # entries
         ents = self.make_entries(button_frame, font=helv36)
         fields = self.make_fields(fields_frame, font=helv36)
+        self.fields_tab = fields
         # buttons
         heightb = 3
         widthb = 6
@@ -968,7 +1027,7 @@ class GUI_Budget(DD_Budget):
                  fg='black', font=font).grid(row=0)
         tk.Label(frame, text='Nvisits(10 yrs)', bg='white',
                  fg='black', font=font).grid(row=1)
-        tk.Label(frame, text='zlim', bg='white',
+        tk.Label(frame, text='zcomp', bg='white',
                  fg='red', font=font).grid(row=2)
         tk.Label(frame, text='DD budget', bg='white',
                  fg='blue', font=font).grid(row=3)
@@ -1067,6 +1126,8 @@ class GUI_Budget(DD_Budget):
         if ddbudget > 0:
             zlim = self.plotBudget_zlim_budget(ddbudget)
             self.plotNvisits_zlim(zlim)
+            # update season length here
+            self.update_tab(config)
         # update canvas
         self.ax1.set_xlim(self.zminp, self.zmax)
         self.ax2.set_xlim(self.zminp, self.zmax)
@@ -1106,6 +1167,8 @@ class GUI_Budget(DD_Budget):
             ddbudget = self.interp_z_ddbudget(zlim)
             zlim = self.plotBudget_zlim_budget(ddbudget)
             self.plotNvisits_zlim(zlim)
+            # update season_length here
+            self.update_tab(config)
         # update canvas
         self.ax1.set_xlim(self.zminp, self.zmax)
         self.ax2.set_xlim(self.zminp, self.zmax)
@@ -1150,7 +1213,61 @@ class GUI_Budget(DD_Budget):
             ddbudget = self.interp_z_ddbudget(zlim)
             zlimb = self.plotBudget_zlim_budget(ddbudget)
             self.plotNvisits_zlim(zlim)
+            # update season length here
+            self.update_tab(config)
         # update canvas
         self.ax1.set_xlim(self.zminp, self.zmax)
         self.ax2.set_xlim(self.zminp, self.zmax)
         self.canvas.draw()
+
+    def update_tab(self, config, which='season_length'):
+        """
+        Method to update fields of the table according to config values
+
+        Parameters
+        ---------------
+        config: dict
+          config dict to use to update
+        which: str, opt
+          field to update (default: season_length)
+
+        """
+        for fieldname in config['Fields']:
+            self.fields_tab[fieldname][which].delete(0, "end")
+            self.fields_tab[fieldname][which].insert(
+                10, str(config[fieldname][which]))
+
+    def nSN(self, config, zlim):
+        """
+        Method to estimate the total number of SN up to z<zlim
+
+        Parameters
+        --------------
+        config: dict
+           configuration file of the fields
+        zlim: float
+          redshift limit for the calculation
+
+        Returns
+        -----------
+        the total number of SN(z<zlim)
+
+        """
+
+        survey_area = 9.6  # 1 LSST foV
+        zmin = 0.01
+        account_for_edges = True
+
+        n_SN = 0
+        for fieldName in self.Fields:
+            seasons = config[fieldName]['seasons']
+            for seas in seasons:
+                season_length = config[fieldName]['season_length']*30.
+                zz, rate, err_rate, nsn, err_nsn = self.sn_rate(zmin=zmin,
+                                                                zmax=zlim,
+                                                                survey_area=survey_area,
+                                                                account_for_edges=account_for_edges,
+                                                                duration=season_length)
+                n_SN += np.cumsum(nsn)[-1]
+
+        return n_SN
