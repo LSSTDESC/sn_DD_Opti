@@ -1,6 +1,6 @@
 Nvisits : 2390000 #total number of LSST visits - 10 years
 Nvisits_night: 300 #max number of visits per field and per obs. night
-Fields : ['COSMOS','ELAIS','CDFS','XMM-LSS','ADFS1']
+Fields : ['COSMOS','ELAIS','CDFS','XMM-LSS','ADFS']
 COSMOS :
   season_length: 6.0 #season length [ months]
   cadence: 1 #cadence [days]
@@ -21,7 +21,7 @@ XMM-LSS :
   cadence: 1 #cadence [days]
   seasons: 7,8 #seasons
   weight_visit: 1   
-ADFS1 :
+ADFS :
   season_length:  6.0 #season length [ months]
   cadence: 1 #cadence [days]
   seasons: 1,2,9,10 #seasons

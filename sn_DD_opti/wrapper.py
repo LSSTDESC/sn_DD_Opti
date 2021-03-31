@@ -16,6 +16,8 @@ class Mod_z:
 
         tabdf = pd.DataFrame.from_records(tab)
 
+        tabdf = tabdf.replace('ADFS1', 'ADFS')
+
         tabmod = tabdf.groupby(['cadence']).apply(
             lambda x: self.mod(x))
 
