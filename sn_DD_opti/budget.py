@@ -20,7 +20,8 @@ from sn_rate import SN_Rate
 
 class DD_Budget:
     def __init__(self, file_visits_ref, file_visits,
-                 runtype='Nvisits_single', dir_config='input/sn_studies',
+                 runtype='Nvisits_single', dir_config='input',
+                 dir_files='visitsDir',
                  configName='DD_init'):
         """
         class estimating the DD budget vs redshift limit
@@ -40,6 +41,8 @@ class DD_Budget:
            type of SNR run to consider (default: Nvisits_single)
         dir_config: str,opt
           directory where config files are located
+        dir_files: str, opt
+           directory where Nvisits files are located (default: visitsDir)
         configName: str
          configuration (yaml) file of the DDF
         """
@@ -50,8 +53,8 @@ class DD_Budget:
         self.colors = dict(zip(self.bands, ['c', 'g', 'y', 'r', 'm']))
 
         self.df_visits_ref = Mod_z(
-            '{}/{}'.format(dir_config, file_visits_ref)).nvisits
-        self.df_visits = Mod_z('{}/{}'.format(dir_config, file_visits)).nvisits
+            '{}/{}'.format(dir_files, file_visits_ref)).nvisits
+        self.df_visits = Mod_z('{}/{}'.format(dir_files, file_visits)).nvisits
         # self.dir_config = dir_config
         # loading the configuration file for this scenario
         name = '{}/{}.yaml'.format(dir_config, configName)
@@ -911,17 +914,20 @@ class GUI_Budget(DD_Budget):
          runtype: str, opt
            type of SNR run to consider (default: Nvisits_single)
         dir_config: str,opt
-          directory where config files are located
+          directory where config files are located (default: input)
+       dir_files: str, opt
+          location directory of Nvisits files (default: visitsDir)
         configName: str
          configuration (yaml) file of the DDF
 
     """
 
     def __init__(self, file_visits_ref, file_visits,
-                 runtype='Nvisits_single', dir_config='input/sn_studies',
+                 runtype='Nvisits_single', dir_config='input',
+                 dir_files='visitsDir',
                  configName='DD_init'):
         super().__init__(file_visits_ref=file_visits_ref, file_visits=file_visits,
-                         runtype=runtype, dir_config=dir_config,
+                         runtype=runtype, dir_config=dir_config, dir_files=dir_files,
                          configName=configName)
 
         # build the GUI

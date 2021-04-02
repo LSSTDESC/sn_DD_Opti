@@ -27,12 +27,12 @@ class Show_Visits:
       min z value (default: 0.1)
     zmax: float, opt
        max z value (default: 0.85)
-    dir_config: str, opt
+    dir_files: str, opt
        location dir of the file
 
     """
 
-    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_config='input'):
+    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_files='input'):
 
         self.cadence = cadence
         self.nvisits_max = nvisits_max
@@ -41,7 +41,7 @@ class Show_Visits:
         # modify the visits
         # the idea here is to keep the number of visits constant for z>zlim where
         # zlim is the limit of the use of the band
-        data = Mod_z('{}/{}'.format(dir_config, file_visits)).nvisits
+        data = Mod_z('{}/{}'.format(dir_files, file_visits)).nvisits
 
         # select data for this cadence
         idx = np.abs(data['cadence']-self.cadence) < 1.e-5
@@ -179,13 +179,13 @@ class GUI_Visits(Show_Visits):
       min z value (default: 0.1)
     zmax: float, opt
        max z value (default: 0.85)
-    dir_config: str, opt
+    dir_files: str, opt
        location dir of the file
     """
 
-    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_config='input'):
+    def __init__(self, file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_files='input'):
         super().__init__(file_visits, cadence=cadence, nvisits_max=nvisits_max,
-                         zmin=zmin, zmax=zmax, dir_config=dir_config)
+                         zmin=zmin, zmax=zmax, dir_files=dir_files)
 
         # build the GUI here
         root = tk.Tk()
