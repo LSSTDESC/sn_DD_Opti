@@ -36,7 +36,16 @@ All rights reserved.
 
 ### Two GUIs can be displayed
 #### Nvisits vs zlim
-- python scripts/showGui.py --show Visits --cadence cad (cad is the cadence: default: 3)
+
+- python scripts/showGui.py --show visits --cadence cad (cad is the cadence: default: 1)
+
+![Image description](docs/Nvisits_z.png)
 
 #### Budget vs zlim
-- python scripts/showGui.py --show Budget
+
+- python scripts/showGui.py --show budget
+
+![Image description](docs/budget_z.png)
+
+#### All options
+- python scripts/showGui.py --help
