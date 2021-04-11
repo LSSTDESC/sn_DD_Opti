@@ -2,17 +2,79 @@ import yaml
 from optparse import OptionParser
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 from scipy.interpolate import interp1d
+import numpy.lib.recfunctions as rf
+
+
+def load(fName):
+
+    tab = np.load(fName, allow_pickle=True)
+
+    res = {}
+    print(tab.dtype)
+    for cad in np.unique(tab['cadence']):
+        idx = tab['cadence'] == cad
+        sel = tab[idx]
+        res[cad] = interp1d(sel['Nvisits'], sel['z'],
+                            bounds_error=False, fill_value=0.)
+    return res
 
 
 def nights(field):
 
-    return field['season_length']*field['Nseasons']*field['Nfields']*30./field['cadence']
+    return field['season_length']*field['Nseasons']*30./field['cadence']
 
 
-def budget(fields, nvisits):
+def budget_field(field):
 
-    return nvisits*nights(fields)
+    return field['Nvisits']*nights(field)
+
+
+def budget(config):
+    bud = 0.
+
+    for field in config['Fields']:
+        if field != 'AGN':
+            bud += budget_field(config[field])
+
+    return bud
+
+
+def budget_config(config, fields=['CDFS', 'ELAIS', 'ADFS'], nADFS=1):
+
+    r = []
+    for nv in range(20, 230, 10):
+        for ff in fields:
+            config[ff]['Nvisits'] = nv
+
+        config['ADFS']['Nvisits'] *= nADFS
+        # print(config)
+        # print('estimated budget', nv, zlim_visit[1](
+        #    nv), budget(config)/config['Nvisits'])
+        r.append((nv, zlim_visit[1](
+            nv), budget(config)/config['Nvisits']))
+
+    res = np.rec.fromrecords(r, names=['Nvisits', 'zlim', 'budget'])
+    return res
+
+
+def budget_multiple_config(config, nADFS=1):
+
+    fields_base = ['COSMOS', 'XMM-LSS']
+    fields = [['ADFS'], ['ADFS', 'CDFS'], ['CDFS', 'ELAIS', 'ADFS']]
+    rtot = None
+    for ff in fields:
+        config['Fields'] = ff+fields_base
+        rb = budget_config(config, ff, nADFS)
+        print(rb)
+        rb = rf.append_fields(rb, 'Nf', [len(ff)]*len(rb))
+        if rtot is None:
+            rtot = rb
+        else:
+            rtot = np.concatenate((rtot, rb))
+
+    return rtot
 
 
 parser = OptionParser()
@@ -26,6 +88,7 @@ config = yaml.load(open(opts.config))
 
 print(config)
 
+"""
 # number of AGN visits
 AGN = config['AGN']
 Nvisits_AGN = int(AGN['Nvisits']*nights(AGN))
@@ -64,5 +127,49 @@ plt.plot(res['nvisits'], res['budget'])
 ninterp = interp1d(res['budget'], res['nvisits'])
 for budget in [0.06, 0.1, 0.15]:
     print(budget, ninterp(budget))
+
+plt.show()
+"""
+zlim_visit = load(
+    'visits_files/Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_20.npy')
+
+print(zlim_visit)
+
+print('estimated budget', budget(config)/config['Nvisits'])
+
+
+res = budget_multiple_config(config, nADFS=1)
+resb = budget_multiple_config(config, nADFS=2)
+
+#res = budget_config(config)
+fig, ax = plt.subplots()
+color = dict(zip(range(1, 4), ['k', 'r', 'b']))
+legm = 'COSMOS$^{0.9}$, XMM-LSS$^{0.9}$'
+legg = dict(
+    zip(range(1, 4), ['ADFS(1p)', 'ADFS(1p)+1 field', 'ADFS(1p)+2fields']))
+leggb = dict(
+    zip(range(1, 4), ['ADFS(2p)', 'ADFS(2p)+1 field', 'ADFS(2p)+2fields']))
+for nf in np.unique(res['Nf']):
+    idx = res['Nf'] == nf
+    sel = res[idx]
+    idxb = resb['Nf'] == nf
+    selb = resb[idxb]
+    legt = '{}+{}'.format(legm, legg[nf])
+    if nf > 1:
+        legt += '/{}'.format(leggb[nf-1])
+    ax.plot(sel['zlim'], sel['budget'], color=color[nf],
+            label=legt)
+    if nf == 3:
+        legt = '{}+{}'.format(legm, leggb[nf])
+        ax.plot(selb['zlim'], selb['budget'],
+                color=color[nf], ls='--', label=legt)
+ax.grid()
+
+ax.set_xlabel('$z_{complete}$', fontsize=12)
+ax.set_ylabel('Budget', fontsize=12)
+ax.tick_params(axis='x', labelsize=12)
+ax.tick_params(axis='y', labelsize=12)
+
+ax.legend(fontsize=12, frameon=True)
 
 plt.show()

@@ -1,17 +1,30 @@
-frac_DDF : 0.06 #DDF fraction
 Nvisits : 2390000 #total number of LSST visits - 10 years
+Fields: ['COSMOS','ELAIS','CDFS','XMM-LSS','ADFS']
 COSMOS :
   season_length: 6. #season length [ months]
   cadence: 1 #cadence [days]
-  Nfields: 1 #number of fields per season
-  Nseasons: 10 #number of seasons
-  Nvisits: 45 #number of visits per obs night
-DDF_not_COSMOS:
+  Nseasons: 2 #number of seasons
+  Nvisits: 232 #number of visits per obs night
+XMM-LSS :
+  season_length: 6. #season length [ months]
+  cadence: 1 #cadence [days]
+  Nseasons: 2 #number of seasons
+  Nvisits: 232 #number of visits per obs night
+CDFS:
+  season_length: 6. #season length [ months]
+  cadence: 1 #cadence [days]
+  Nseasons: 2 #number of seasons
+  Nvisits: 27 #number of visits per obs night
+ELAIS:
+  season_length: 6. #season length [ months]
+  cadence: 1 #cadence [days]
+  Nseasons: 2 #number of seasons
+  Nvisits: 27 #number of visits per obs night
+ADFS:
   season_length:  6. #season length [ months]
   cadence: 1 #cadence [days]
-  Nfields: 5 #number of fields per season
-  Nseasons: 10 #number of seasons
-  Nvisits: 45 #number of visits per obs night
+  Nseasons: 2 #number of seasons
+  Nvisits: 27 #number of visits per obs night
 AGN:
   season_length:  6.0  #season length [ months]-could be 5.25
   cadence: 2 #cadence [days]
