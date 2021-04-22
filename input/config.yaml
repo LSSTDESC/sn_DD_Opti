@@ -1,15 +1,17 @@
 Nvisits : 2390000 #total number of LSST visits - 10 years
 Fields: ['COSMOS','ELAIS','CDFS','XMM-LSS','ADFS']
 COSMOS :
-  season_length: 6. #season length [ months]
+  season_length: 4.9 #season length [ months]
   cadence: 1 #cadence [days]
   Nseasons: 2 #number of seasons
   Nvisits: 232 #number of visits per obs night
+  zlim: 0.9 #redshift limit
 XMM-LSS :
-  season_length: 6. #season length [ months]
+  season_length: 5.4 #season length [ months]
   cadence: 1 #cadence [days]
   Nseasons: 2 #number of seasons
   Nvisits: 232 #number of visits per obs night
+  zlim: 0.9 # redshift limit
 CDFS:
   season_length: 6. #season length [ months]
   cadence: 1 #cadence [days]
@@ -23,7 +25,7 @@ ELAIS:
 ADFS:
   season_length:  6. #season length [ months]
   cadence: 1 #cadence [days]
-  Nseasons: 2 #number of seasons
+  Nseasons: 4 #number of seasons
   Nvisits: 27 #number of visits per obs night
 AGN:
   season_length:  6.0  #season length [ months]-could be 5.25
