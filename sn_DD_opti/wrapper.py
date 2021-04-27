@@ -56,4 +56,5 @@ class Mod_z:
             #print('io', grp[what])
 
         grp['Nvisits_g'] = 2
+        grp['Nvisits_r'] = 4
         return grp

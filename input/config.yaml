@@ -17,16 +17,19 @@ CDFS:
   cadence: 1 #cadence [days]
   Nseasons: 2 #number of seasons
   Nvisits: 27 #number of visits per obs night
+  zlim: 0.5
 ELAIS:
   season_length: 6. #season length [ months]
   cadence: 1 #cadence [days]
   Nseasons: 2 #number of seasons
   Nvisits: 27 #number of visits per obs night
+  zlim: 0.5
 ADFS:
   season_length:  6. #season length [ months]
   cadence: 1 #cadence [days]
   Nseasons: 4 #number of seasons
   Nvisits: 27 #number of visits per obs night
+  zlim: 0.5
 AGN:
   season_length:  6.0  #season length [ months]-could be 5.25
   cadence: 2 #cadence [days]
