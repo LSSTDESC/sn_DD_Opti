@@ -1,38 +1,43 @@
-Nvisits : 2390000 #total number of LSST visits - 10 years
+nvisits : 2390000 #total number of LSST visits - 10 years
 Fields: ['COSMOS','ELAIS','CDFS','XMM-LSS','ADFS']
 COSMOS :
-  season_length: 4.9 #season length [ months]
+  seasonlength: 4.9 #season length [ months]
   cadence: 1 #cadence [days]
-  Nseasons: 2 #number of seasons
-  Nvisits: 232 #number of visits per obs night
+  nseasons: 2 #number of seasons
+  nvisits: 232 #number of visits per obs night
   zlim: 0.9 #redshift limit
+  npointings: 1
 XMM-LSS :
-  season_length: 5.4 #season length [ months]
+  seasonlength: 5.4 #season length [ months]
   cadence: 1 #cadence [days]
-  Nseasons: 2 #number of seasons
-  Nvisits: 232 #number of visits per obs night
+  nseasons: 2 #number of seasons
+  nvisits: 232 #number of visits per obs night
   zlim: 0.9 # redshift limit
+  npointings: 1
 CDFS:
-  season_length: 6. #season length [ months]
+  seasonlength: 6. #season length [ months]
   cadence: 1 #cadence [days]
-  Nseasons: 2 #number of seasons
-  Nvisits: 27 #number of visits per obs night
+  nseasons: 2 #number of seasons
+  nvisits: 27 #number of visits per obs night
   zlim: 0.5
+  npointings: 1
 ELAIS:
-  season_length: 6. #season length [ months]
+  seasonlength: 6. #season length [ months]
   cadence: 1 #cadence [days]
-  Nseasons: 2 #number of seasons
-  Nvisits: 27 #number of visits per obs night
+  nseasons: 2 #number of seasons
+  nvisits: 27 #number of visits per obs night
   zlim: 0.5
+  npointings: 1
 ADFS:
-  season_length:  6. #season length [ months]
+  seasonlength:  6. #season length [ months]
   cadence: 1 #cadence [days]
-  Nseasons: 4 #number of seasons
-  Nvisits: 27 #number of visits per obs night
+  nseasons: 4 #number of seasons
+  nvisits: 27 #number of visits per obs night
   zlim: 0.5
+  npointings: 1
 AGN:
-  season_length:  6.0  #season length [ months]-could be 5.25
+  seasonlength:  6.0  #season length [ months]-could be 5.25
   cadence: 2 #cadence [days]
   Nfields: 4 #number of fields per season
-  Nseasons: 10 #number of seasons	
-  Nvisits: 18 #number of visits per obs night - see AGN paper
+  nseasons: 10 #number of seasons	
+  nvisits: 18 #number of visits per obs night - see AGN paper
