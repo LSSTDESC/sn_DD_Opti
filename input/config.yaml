@@ -1,4 +1,4 @@
-nvisits : 2390000 #total number of LSST visits - 10 years
+nvisits_WFD : 2122176 #total number of LSST visits not DDF - 10 years - mean fbs1.6
 Fields: ['COSMOS','ELAIS','CDFS','XMM-LSS','ADFS']
 COSMOS :
   seasonlength: 4.9 #season length [ months]
