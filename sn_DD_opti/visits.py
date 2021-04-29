@@ -192,7 +192,8 @@ class GUI_Visits(Show_Visits):
         # figure where the plots will be drawn
         self.fig = plt.Figure(figsize=(15, 6), dpi=100)
         self.ax = self.fig.add_subplot(111)
-        leg = 'days$^{-1}$'
+        #leg = 'days$^{-1}$'
+        leg = 'day'
         self.fig.suptitle('cadence: {} {}'.format(int(self.cadence), leg))
         self.fig.subplots_adjust(right=0.8)
         self.ax.set_xlim(self.zmin, self.zmax)
