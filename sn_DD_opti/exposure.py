@@ -47,27 +47,29 @@ class DDF_Scenario:
                  plot_refs=False):
 
         self.zlim_visit, self.visit_zlim = self.load(fDir, fName)
-        
+
         self.nvisits_seasonlength = self.load_seasonlength_nvisits(
             slDir, slName)
 
         if plot_refs:
             self.plot_zlim_visits(self.visit_zlim)
-            self.plot_zlim_visits(self.zlim_visit, varx='nvisits',legx='Nvisits',legy='$z_{complete}$')
+            self.plot_zlim_visits(
+                self.zlim_visit, varx='nvisits', legx='Nvisits', legy='$z_{complete}$')
             self.plot_seasonlength_nvisits(self.nvisits_seasonlength)
             plt.show()
-         
+
         self.rateSN = SN_Rate(H0=H0, Om0=Om0,
                               min_rf_phase=min_rf_phase,
                               max_rf_phase=max_rf_phase)
         print(vars(self.rateSN))
-              
+
         self.cadence = cadence
 
         # get the number of visits for the "z fixed" fields
         self.update_config_zlim(config, zfields)
         nvisits_DDF = self.nvisits_tot(config)
-        print('estimated budget',nvisits_DDF /(config['nvisits_WFD']+nvisits_DDF))
+        print('estimated budget', nvisits_DDF /
+              (config['nvisits_WFD']+nvisits_DDF))
 
         configb = copy.deepcopy(config)
         self.res = self.budget_multiple_config(config, nADFS=1)
@@ -89,7 +91,7 @@ class DDF_Scenario:
             nvisits = int(self.visit_zlim[self.cadence](zlim))
             config[field]['nvisits'] = nvisits
             seasonlength = self.nvisits_seasonlength[field](nvisits)
-            seasonlength = np.min([seasonlength,180.])
+            seasonlength = np.min([seasonlength, 180.])
             config[field]['seasonlength'] = np.round(
                 seasonlength.item()/30., 1)
             config[field]['cadence'] = self.cadence
@@ -111,7 +113,7 @@ class DDF_Scenario:
             config[field]['zlim'] = self.zlim_visit[self.cadence](
                 nvisits).item()
             seasonlength = self.nvisits_seasonlength[field](nvisits)
-            seasonlength = np.min([seasonlength,180.])
+            seasonlength = np.min([seasonlength, 180.])
             config[field]['seasonlength'] = np.round(
                 seasonlength.item()/30., 1)
             config[field]['cadence'] = self.cadence
@@ -228,7 +230,7 @@ class DDF_Scenario:
             if field != 'AGN':
                 nnvisits = self.nvisits_field(config[field])
                 bud += config[field]['npointings'] * nnvisits
-                print('bud',field,nnvisits,bud)
+                print('bud', field, nnvisits, bud)
 
         return bud
 
@@ -257,8 +259,9 @@ class DDF_Scenario:
             seasonlength = config[field]['seasonlength']*30.
             nseasons = config[field]['nseasons']
 
-            nsn_field = self.nsn_indiv(zmin,zmax,dz,seasonlength,survey_area)
-            print('yer', field, zmax, seasonlength,zmin,dz,
+            nsn_field = self.nsn_indiv(
+                zmin, zmax, dz, seasonlength, survey_area)
+            print('yer', field, zmax, seasonlength, zmin, dz,
                   nseasons, nsn_field)
             if field != 'ADFS':
                 nsn_tot += nsn_field*nseasons
@@ -267,7 +270,7 @@ class DDF_Scenario:
 
         return nsn_tot
 
-    def nsn_indiv(self,zmin,zmax,dz,seasonlength,survey_area):
+    def nsn_indiv(self, zmin, zmax, dz, seasonlength, survey_area):
         """
         Method to estimate the number of supernovae
 
@@ -295,11 +298,11 @@ class DDF_Scenario:
                                                          duration=seasonlength,
                                                          survey_area=survey_area,
                                                          account_for_edges=True)
-        
+
         return np.cumsum(nsn_r)[-1]
 
-        return 
-    
+        return
+
     def budget_config(self, config, fields=['CDFS', 'ELAIS', 'ADFS'], nADFS=1):
         """
         Method to estimate the budget depending on the number of visits per obs night
@@ -328,8 +331,8 @@ class DDF_Scenario:
             zlim_deep = config[fields[0]]['zlim']
             nvisits_DDF = self.nvisits_tot(config)
             budget = nvisits_DDF/(config['nvisits_WFD']+nvisits_DDF)
-            print('there man',config,budget)
-            r.append((nv, zlim_deep, self.nsn(config, nADFS),budget))
+            print('there man', config, budget)
+            r.append((nv, zlim_deep, self.nsn(config, nADFS), budget))
 
         res = np.rec.fromrecords(r, names=['nvisits', 'zlim', 'nsn', 'budget'])
         return res
@@ -366,10 +369,10 @@ class DDF_Scenario:
 
         return rtot
 
-    def plot_zlim_visits(self, tab, varx='zlim',legx='$z_{complete}$',legy='Nvisits'):
+    def plot_zlim_visits(self, tab, varx='zlim', legx='$z_{complete}$', legy='Nvisits'):
         """
         Method to plot zlim/nvisits vs nvisits/zlim
-        
+
         Parameters
         ---------------
         tab: dict
@@ -383,17 +386,17 @@ class DDF_Scenario:
 
 
         """
-        
-        fig, ax = plt.subplots(figsize=(14,8))
+
+        fig, ax = plt.subplots(figsize=(14, 8))
 
         if varx == 'zlim':
-            xvals = np.arange(0.5,0.951,0.01)
+            xvals = np.arange(0.5, 0.951, 0.01)
         if varx == 'nvisits':
-            xvals = np.arange(10,300,10)
-        
+            xvals = np.arange(10, 300, 10)
+
         for key, vals in tab.items():
             yvals = vals(xvals)
-            ax.plot(xvals,yvals,label='cadence={}'.format(key))
+            ax.plot(xvals, yvals, label='cadence={}'.format(key))
 
         fontsize = 15
         ax.set_xlabel(legx, fontsize=fontsize)
@@ -405,25 +408,23 @@ class DDF_Scenario:
 
     def plot_seasonlength_nvisits(self, tab):
 
-
-        fig, ax = plt.subplots(figsize=(12,8))
-        nvisits = np.arange(10,500,10)
+        fig, ax = plt.subplots(figsize=(12, 8))
+        nvisits = np.arange(10, 500, 10)
 
         for key, vals in tab.items():
             sl = vals(nvisits)
-            ax.plot(nvisits,sl,label='{}'.format(key))
+            ax.plot(nvisits, sl, label='{}'.format(key))
 
         fontsize = 15
-           
+
         ax.set_xlabel('Nvisits', fontsize=fontsize)
         ax.set_ylabel('Season length [days]', fontsize=fontsize)
         ax.tick_params(axis='x', labelsize=fontsize)
         ax.tick_params(axis='y', labelsize=fontsize)
         ax.grid()
-        ax.legend()     
-        
+        ax.legend()
 
-    
+
 def getRes(config, zfields, fDir, fName, slDir='input', slName='seasonlength_nvisits.npy'):
     """
     Method to get results from the DDF_Scenario class
@@ -471,7 +472,7 @@ def plotFinal(config, zfields, res, resb):
     fig, ax = plt.subplots(nrows=2, ncols=1, sharex='col', figsize=(14, 10))
     fig.subplots_adjust(hspace=0)
     color = dict(zip(range(1, 4), ['r', 'orange', 'b']))
-    color = dict(zip(range(1, 5), ['b', 'r', 'orange','g']))
+    color = dict(zip(range(1, 5), ['b', 'r', 'orange', 'g']))
     nseas_adfs = config['ADFS']['nseasons']
     nseas_field = config['CDFS']['nseasons']
 
@@ -532,10 +533,10 @@ def biplot(ax, res, xvar, yvara, yvarb, color, legm, legg, hatch='None'):
         selb = resb[idxb]
         legt = '{}+{}'.format(legm, legg[nf])
         nfc = nf
-        if hatch == '' and nf==3:
-            nfc=4
-        if hatch != '' and nf==1:
-            nfc=4
+        if hatch == '' and nf == 3:
+            nfc = 4
+        if hatch != '' and nf == 1:
+            nfc = 4
         ax[0].plot(sel[xvar], sel[yvara], color=color[nfc], linewidth=0.5)
         ax[0].fill_between(sel[xvar], sel[yvara], color=color[nfc],
                            label=legt, alpha=0.4, hatch=hatch)
