@@ -9,6 +9,14 @@ from matplotlib.backends.backend_tkagg import (
 import numpy as np
 matplotlib.use('tkagg')
 
+plt.rcParams['xtick.labelsize'] = 15
+plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
+plt.rcParams['figure.titlesize'] = 15
+plt.rcParams['legend.fontsize'] = 15
+plt.rcParams['font.weight'] = 'bold'
+plt.rcParams['font.family'] = 'serif'
+
 
 class Show_Visits:
     """
@@ -100,8 +108,10 @@ class Show_Visits:
         self.ax.set_xlabel('$z_{complete}$')
         self.ax.set_ylabel('$N_{visits}$')
         # self.ax.legend()
-        self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
-                       fontsize=12, frameon=False, loc='lower right')
+        # self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
+        #               fontsize=12,frameon=False, loc='lower right')
+        self.ax.legend(bbox_to_anchor=(-0.005, 1.1),
+                       loc='upper left', ncol=6, frameon=False)
         self.ax.set_ylim(0,)
         if self.nvisits_max > 0:
             self.ax.set_ylim(ymax=self.nvisits_max)
@@ -194,7 +204,7 @@ class GUI_Visits(Show_Visits):
         self.ax = self.fig.add_subplot(111)
         #leg = 'days$^{-1}$'
         leg = 'day'
-        self.fig.suptitle('cadence: {} {}'.format(int(self.cadence), leg))
+        #self.fig.suptitle('cadence: {} {}'.format(int(self.cadence), leg))
         self.fig.subplots_adjust(right=0.8)
         self.ax.set_xlim(self.zmin, self.zmax)
         # define the figure canvas here

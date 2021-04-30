@@ -8,6 +8,14 @@ import numpy.lib.recfunctions as rf
 import copy
 from sn_rate import SN_Rate
 
+plt.rcParams['xtick.labelsize'] = 15
+plt.rcParams['ytick.labelsize'] = 15
+plt.rcParams['axes.labelsize'] = 15
+plt.rcParams['figure.titlesize'] = 15
+plt.rcParams['legend.fontsize'] = 15
+plt.rcParams['font.weight'] = 'bold'
+plt.rcParams['font.family'] = 'serif'
+
 
 class DDF_Scenario:
     """
@@ -512,7 +520,7 @@ def plotFinal(config, zfields, res, resb):
     ax[0].set_ylim([min_budget, 0.15])
     ax[1].set_ylim([min_nsn, None])
     ax[1].set_xlabel('$z_{complete}$', fontsize=15)
-    ax[0].set_ylabel('DD budget', fontsize=15)
+    ax[0].set_ylabel('DD budget', fontsize=15, fontweight='bold')
     ax[1].set_ylabel('$N_{SN} (z\leq z_{complete})$', fontsize=15)
     ax[1].tick_params(axis='x', labelsize=15)
     ax[0].tick_params(axis='y', labelsize=15)
