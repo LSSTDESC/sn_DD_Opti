@@ -98,12 +98,12 @@ class Show_Visits:
         zvals = np.arange(self.zmin, self.zmax+zstep, zstep)
 
         self.ax.plot(zvals, self.dictvisits['nvisits']
-                     (zvals), color='k', label='sum')
+                     (zvals), color='k', label='sum', lw=2)
 
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             self.ax.plot(zvals, self.dictvisits[key](
-                zvals), color=self.colors[b], label='${}$-band'.format(b))
+                zvals), color=self.colors[b], label='${}$-band'.format(b), lw=2)
         self.ax.grid()
         self.ax.set_xlabel('$z_{complete}$')
         self.ax.set_ylabel('$N_{visits}$')
@@ -200,7 +200,7 @@ class GUI_Visits(Show_Visits):
         # build the GUI here
         root = tk.Tk()
         # figure where the plots will be drawn
-        self.fig = plt.Figure(figsize=(15, 6), dpi=100)
+        self.fig = plt.Figure(figsize=(15, 10), dpi=100)
         self.ax = self.fig.add_subplot(111)
         #leg = 'days$^{-1}$'
         leg = 'day'
