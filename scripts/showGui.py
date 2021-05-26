@@ -55,6 +55,9 @@ parser.add_option("--zmax", type=float, default=0.95,
                   help="zmax for display - for show Visits only [%default]")
 parser.add_option("--Ny_max", type=int, default=20,
                   help="y-band max number of visits [%default]")
+parser.add_option("--visitsDir", type=str, default='visits_files',
+                  help="directory where visits files are located[%default]")
+
 
 opts, args = parser.parse_args()
 
@@ -63,7 +66,7 @@ Nvisits_z_file = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_{}.npy'.
 Nvisits_z_fields_file = 'Nvisits_z_fields_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_{}.npy'.format(
     opts.Ny_max)
 
-visitsDir = 'visits_files'
+visitsDir = opts.visitsDir
 
 check_grab(visitsDir, [Nvisits_z_file, Nvisits_z_fields_file])
 
