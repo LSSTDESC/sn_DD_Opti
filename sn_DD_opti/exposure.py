@@ -330,7 +330,7 @@ class DDF_Scenario:
         """
         r = []
         print(config)
-        for nv in range(10, 250, 10):
+        for nv in range(8, 250, 10):
             for ff in fields:
                 config[ff]['nvisits'] = nv
 
@@ -555,12 +555,14 @@ def biplot(ax, res, xvar, yvara, yvarb, color, legm, legg, hatch='None'):
 
 parser = OptionParser()
 
-parser.add_option('--config', type=str, default='config.yaml',
+parser.add_option('--config', type=str, default='input/config.yaml',
                   help='input config file [%default]')
 parser.add_option('--ultraDeep', type=str, default='COSMOS,XMM-LSS',
                   help='list of ultra deep fields[%default]')
 parser.add_option('--z_ultra', type=str, default='0.9,0.9',
                   help='z complete of ultra deep fields[%default]')
+parser.add_option("--visitsDir", type=str, default='visits_files',
+                  help="directory where visits files are located[%default]")
 
 opts, args = parser.parse_args()
 
@@ -573,10 +575,10 @@ zfields = dict(zip(ultraDeepFields, z_ultra))
 
 print(config)
 
-resa_1, resa_2 = getRes(config, zfields, 'visits_files',
+resa_1, resa_2 = getRes(config, zfields, opts.visitsDir,
                         'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_80.npy')
 
-resb_1, resb_2 = getRes(config, zfields, 'visits_files',
+resb_1, resb_2 = getRes(config, zfields, opts.visitsDir,
                         'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_20.npy')
 
 resa_1 = sel(resa_1)
