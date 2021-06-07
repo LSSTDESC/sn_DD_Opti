@@ -1,3 +1,4 @@
+from .version import __version__
 import matplotlib.pyplot as plt
 
 filtercolors = dict(zip('ugrizy', ['b', 'c', 'g', 'y', 'r', 'm']))
