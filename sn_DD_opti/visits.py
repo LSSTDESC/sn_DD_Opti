@@ -112,8 +112,8 @@ class Show_Visits:
         # self.ax.legend()
         # self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
         #               fontsize=12,frameon=False, loc='lower right')
-        self.ax.legend(bbox_to_anchor=(-0.005, 1.1),
-                       loc='upper left', ncol=6, frameon=False)
+        self.ax.legend(bbox_to_anchor=(0.1, 1.15),
+                       loc='upper left', ncol=3, frameon=False)
         self.ax.set_ylim(0,)
         if self.nvisits_max > 0:
             self.ax.set_ylim(ymax=self.nvisits_max)
@@ -129,7 +129,7 @@ class Show_Visits:
           redshift considered
 
         """
-        fontsize = 15
+        fontsize = 20
 
         ylims = self.ax.get_ylim()
         nvisits = int(np.round(self.dictvisits['nvisits'](z)))
@@ -138,16 +138,16 @@ class Show_Visits:
         nvstr = 'N_{visits}'
         zstr = 'z_{complete}'
         self.ax.text(0.6, yref, '${}$ = {}'.format(nvstr,
-                                                   nvisits), fontsize=fontsize)
+                                                   nvisits))
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(np.round(self.dictvisits[key](z)))
             self.ax.text(0.6, 0.8*ylims[1]-scale*io,
-                         '${}^{}$ ={}'.format(nvstr, b, nvisits_b), fontsize=fontsize, color=self.colors[b])
+                         '${}^{}$ ={}'.format(nvstr, b, nvisits_b), color=self.colors[b])
 
         self.ax.text(0.9*z, np.min([1.5*nvisits,280]),
-                     '${}$ = {}'.format(zstr, np.round(z, 2)), fontsize=fontsize)
-        self.ax.arrow(z, np.min([1.4*nvisits,280]), 0., np.max([-1.4*nvisits,-280]),
+                     '${}$ = {}'.format(zstr, np.round(z, 2)))
+        self.ax.arrow(z, np.min([1.4*nvisits,270]), 0., np.max([-1.4*nvisits,-270]),
                       length_includes_head=True, color='r',
                       head_length=5, head_width=0.01)
         self.ax.set_ylim(0,)
