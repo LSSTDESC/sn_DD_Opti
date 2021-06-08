@@ -145,9 +145,9 @@ class Show_Visits:
             self.ax.text(0.6, 0.8*ylims[1]-scale*io,
                          '${}^{}$ ={}'.format(nvstr, b, nvisits_b), fontsize=fontsize, color=self.colors[b])
 
-        self.ax.text(0.95*z, 1.5*nvisits,
+        self.ax.text(0.9*z, np.min([1.5*nvisits,280]),
                      '${}$ = {}'.format(zstr, np.round(z, 2)), fontsize=fontsize)
-        self.ax.arrow(z, 1.4*nvisits, 0., -1.4*nvisits,
+        self.ax.arrow(z, np.min([1.4*nvisits,280]), 0., np.max([-1.4*nvisits,-280]),
                       length_includes_head=True, color='r',
                       head_length=5, head_width=0.01)
         self.ax.set_ylim(0,)
