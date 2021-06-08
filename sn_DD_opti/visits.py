@@ -8,7 +8,8 @@ from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 import numpy as np
 matplotlib.use('tkagg')
-
+from . import plt
+"""
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
@@ -16,6 +17,7 @@ plt.rcParams['figure.titlesize'] = 15
 plt.rcParams['legend.fontsize'] = 15
 plt.rcParams['font.weight'] = 'bold'
 plt.rcParams['font.family'] = 'serif'
+"""
 
 
 class Show_Visits:
