@@ -1,5 +1,5 @@
 import matplotlib
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from .wrapper import Mod_z
 import tkinter as tk
@@ -7,17 +7,8 @@ from tkinter import font as tkFont
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 import numpy as np
-matplotlib.use('tkagg')
+# matplotlib.use('tkagg')
 from . import plt
-"""
-plt.rcParams['xtick.labelsize'] = 15
-plt.rcParams['ytick.labelsize'] = 15
-plt.rcParams['axes.labelsize'] = 15
-plt.rcParams['figure.titlesize'] = 15
-plt.rcParams['legend.fontsize'] = 15
-plt.rcParams['font.weight'] = 'bold'
-plt.rcParams['font.family'] = 'serif'
-"""
 
 
 class Show_Visits:
@@ -107,12 +98,12 @@ class Show_Visits:
             self.ax.plot(zvals, self.dictvisits[key](
                 zvals), color=self.colors[b], label='${}$-band'.format(b), lw=2)
         self.ax.grid()
-        self.ax.set_xlabel('$z_{complete}$')
-        self.ax.set_ylabel('$N_{visits}$')
+        self.ax.set_xlabel('$\mathrm{z_{complete}}$')
+        self.ax.set_ylabel(r'$\mathrm{N_{visits}}$')
         # self.ax.legend()
         # self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
         #               fontsize=12,frameon=False, loc='lower right')
-        self.ax.legend(bbox_to_anchor=(0.1, 1.15),
+        self.ax.legend(bbox_to_anchor=(0.1, 1.17),
                        loc='upper left', ncol=3, frameon=False)
         self.ax.set_ylim(0,)
         if self.nvisits_max > 0:
@@ -135,19 +126,20 @@ class Show_Visits:
         nvisits = int(np.round(self.dictvisits['nvisits'](z)))
         yref = 0.9*ylims[1]
         scale = 0.1*ylims[1]
-        nvstr = 'N_{visits}'
-        zstr = 'z_{complete}'
-        self.ax.text(0.6, yref, '${}$ = {}'.format(nvstr,
-                                                   nvisits))
+        nvstr = 'N$_{\mathrm{{visits}}}$'
+        zstr = '$\mathrm{z_{complete}}$'
+        self.ax.text(0.6, yref, '{}= {}'.format(nvstr,
+                                                nvisits))
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(np.round(self.dictvisits[key](z)))
+            ff = 'N$_{\mathrm{visits}}^'+'{}'.format(b)+'$'
             self.ax.text(0.6, 0.8*ylims[1]-scale*io,
-                         '${}^{}$ ={}'.format(nvstr, b, nvisits_b), color=self.colors[b])
+                         '{} ={}'.format(ff, nvisits_b), color=self.colors[b])
 
-        self.ax.text(0.9*z, np.min([1.5*nvisits,280]),
-                     '${}$ = {}'.format(zstr, np.round(z, 2)))
-        self.ax.arrow(z, np.min([1.4*nvisits,270]), 0., np.max([-1.4*nvisits,-270]),
+        self.ax.text(0.9*z, np.min([1.5*nvisits, 280]),
+                     '{} = {}'.format(zstr, np.round(z, 2)))
+        self.ax.arrow(z, np.min([1.4*nvisits, 270]), 0., np.max([-1.4*nvisits, -270]),
                       length_includes_head=True, color='r',
                       head_length=5, head_width=0.01)
         self.ax.set_ylim(0,)
@@ -202,7 +194,8 @@ class GUI_Visits(Show_Visits):
         # build the GUI here
         root = tk.Tk()
         # figure where the plots will be drawn
-        self.fig = plt.Figure(figsize=(15, 10), dpi=100)
+        #self.fig = plt.Figure(figsize=(15, 10), dpi=100)
+        self.fig = plt.Figure(figsize=(12, 8), dpi=100)
         self.ax = self.fig.add_subplot(111)
         #leg = 'days$^{-1}$'
         leg = 'day'

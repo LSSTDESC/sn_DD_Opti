@@ -14,8 +14,8 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 plt.rcParams['figure.titlesize'] = 15
 plt.rcParams['legend.fontsize'] = 15
-plt.rcParams['font.weight'] = 'bold'
-plt.rcParams['font.family'] = 'serif'
+#plt.rcParams['font.weight'] = 'bold'
+plt.rcParams['font.family'] = 'Arial'
 
 
 class DDF_Scenario:
@@ -390,30 +390,31 @@ class DDF_Scenario:
 def plotContourBudget(zfields, fDir, slDir='input', slName='seasonlength_nvisits.npy'):
 
     #fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
-
-    fig, ax = plt.subplots(figsize=(8, 6))
     leg = ''
     for kk in zfields.keys():
         leg += kk+'$^{'+str(zfields[kk]['zlimit']) + \
             '}_{'+str(zfields[kk]['nseasons'])+'}$'
         if kk == 'COSMOS':
             leg += ' + '
-    fig.suptitle('N$_{y}$ = 80 - '+leg, weight='bold')
+    """
+    fig, ax = plt.subplots(figsize=(8, 6))
+ 
+    fig.suptitle('N$_{\mathrm{visits}}^{y}$ = 80 - '+leg, weight='bold')
     fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_80.npy'
     plotContour(ax, zfields, fDir, fName,
                 slDir=slDir, slName=slName, color='b')
-
-    ax.set_xlabel('Number of deep fields$_2$', weight='bold')
-    ax.set_ylabel('$z_{complete}$', weight='bold')
+    ax.set_xlabel('Number of deep fields$_2$')
+    ax.set_ylabel('\mathrm{$z_{complete}$}')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    """
     figb, axb = plt.subplots(figsize=(8, 6))
-    figb.suptitle('N$_{y}$ = 20 - '+leg, weight='bold')
+    figb.suptitle('N$_{\mathrm{visits}}^{y}$ = 20 - '+leg)
     fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_20.npy'
     plotContour(axb, zfields, fDir, fName,
                 slDir=slDir, slName=slName, color='k')
 
-    axb.set_xlabel('Number of deep fields$_2$', weight='bold')
-    axb.set_ylabel('$z_{complete}$', weight='bold')
+    axb.set_xlabel('Number of deep fields$_{\mathrm{2}}$')
+    axb.set_ylabel('$\mathrm{z_{complete}}$')
     axb.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.show()
 
