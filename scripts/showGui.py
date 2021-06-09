@@ -45,7 +45,7 @@ def check_grab(visitsDir, fileList, webPath='https://me.lsst.eu/gris/DD_design')
 
 parser = OptionParser()
 
-parser.add_option("--show", type="str", default='Visits',
+parser.add_option("--show", type="str", default='visits',
                   help="GUI to visualize - visits or budget[%default]")
 parser.add_option("--cadence", type="float", default=1.0,
                   help="cadence - for show Visits only [%default]")
