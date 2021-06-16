@@ -98,7 +98,7 @@ class Show_Visits:
             self.ax.plot(zvals, self.dictvisits[key](
                 zvals), color=self.colors[b], label='${}$-band'.format(b), lw=2)
         self.ax.grid()
-        self.ax.set_xlabel('$\mathrm{z_{complete}}$')
+        self.ax.set_xlabel('$z_{\mathrm{complete}}$')
         self.ax.set_ylabel(r'$\mathrm{N_{visits}}$')
         # self.ax.legend()
         # self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
@@ -127,7 +127,7 @@ class Show_Visits:
         yref = 0.9*ylims[1]
         scale = 0.1*ylims[1]
         nvstr = 'N$_{\mathrm{{visits}}}$'
-        zstr = '$\mathrm{z_{complete}}$'
+        zstr = '$z_{\mathrm{complete}}$'
         self.ax.text(0.6, yref, '{}= {}'.format(nvstr,
                                                 nvisits))
         for io, b in enumerate(self.bands):

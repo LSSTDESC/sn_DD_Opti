@@ -12,7 +12,7 @@ plt.rcParams['legend.fontsize'] = 22
 #plt.rcParams['font.family'] = 'Liberation Serif'
 plt.rcParams['font.family'] = 'Arial'
 #plt.rcParams['font.family'] = 'Verdana'
-plt.rcParams['font.weight'] = 'bold'
+#plt.rcParams['font.weight'] = 'bold'
 
 #plt.rcParams['mathtext.default'] = 'regular'
 #plt.rcParams['font.serif'] = 'Times'
