@@ -414,7 +414,7 @@ def plotContourBudget(zfields, fDir, slDir='input', slName='seasonlength_nvisits
                 slDir=slDir, slName=slName, color='k')
 
     axb.set_xlabel('Number of deep fields$_{\mathrm{2}}$')
-    axb.set_ylabel('$\mathrm{z_{complete}}$')
+    axb.set_ylabel('$z_{\mathrm{complete}}$')
     axb.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.show()
 
