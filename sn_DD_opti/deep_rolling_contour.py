@@ -70,7 +70,7 @@ class DDF_Scenario:
                               max_rf_phase=max_rf_phase)
         print(vars(self.rateSN))
 
-        self.cadence = cadence
+        self.cadence_ref = cadence
 
         # get the number of visits and season length for fields with fixed zlim
 
@@ -193,15 +193,16 @@ class DDF_Scenario:
         for key, vals in self.ultraFields.items():
             print('io', key, vals)
             Nvisits_ultraDD += self.nvisits_field(
-                vals['Nvisits'], vals['season_length'], vals['nseasons'], self.cadence)
+                vals['Nvisits'], vals['season_length'], vals['nseasons'], self.cadence_ref)
 
         print('booo', Nvisits_ultraDD)
         Nvisits_DD = (budget*Nvisits_nonDD+(budget-1.)
                       * Nvisits_ultraDD)/(1.-budget)
 
-        nvisits = Nvisits_DD/(Nfields*Nseasons*season_length*30.)/self.cadence
+        nvisits = Nvisits_DD / \
+            (Nfields*Nseasons*season_length*30.)/self.cadence_ref
         print('aoooo', nvisits)
-        zlimit = self.zlim_visit[self.cadence](nvisits)
+        zlimit = self.zlim_visit[self.cadence_ref](nvisits)
 
         return np.round(zlimit, 4)
 
@@ -209,15 +210,15 @@ class DDF_Scenario:
 
         Nvisits_nonDD = 2122176
 
-        Nvisits = self.visit_zlim[self.cadence](zlim)
+        Nvisits = self.visit_zlim[self.cadence_ref](zlim)
         print('hhhhh', Nvisits)
         Nvisits_DD = Nfields*self.nvisits_field(
-            Nvisits, season_length, nseasons, self.cadence)
+            Nvisits, season_length, nseasons, self.cadence_ref)
 
         for key, vals in self.ultraFields.items():
             print('io', key, vals)
             Nvisits_DD += self.nvisits_field(
-                vals['Nvisits'], vals['season_length'], vals['nseasons'], self.cadence)
+                vals['Nvisits'], vals['season_length'], vals['nseasons'], self.cadence_ref)
 
         return Nvisits_DD/(Nvisits_DD+Nvisits_nonDD)
 
@@ -387,7 +388,9 @@ class DDF_Scenario:
         ax.legend()
 
 
-def plotContourBudget(zfields, fDir, slDir='input', slName='seasonlength_nvisits.npy'):
+def plotContourBudget(zfields, fDir,
+                      slDir='input', slName='seasonlength_nvisits.npy',
+                      nseasons=2, season_length=6., cadence=1.):
 
     #fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
     leg = ''
@@ -411,15 +414,19 @@ def plotContourBudget(zfields, fDir, slDir='input', slName='seasonlength_nvisits
     figb.suptitle('N$_{\mathrm{visits}}^{y}$ = 20 - '+leg)
     fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_20.npy'
     plotContour(axb, zfields, fDir, fName,
-                slDir=slDir, slName=slName, color='k')
+                slDir=slDir, slName=slName, color='k',
+                nseasons=nseasons, season_length=season_length,
+                cadence=cadence)
 
-    axb.set_xlabel('Number of deep fields$_{\mathrm{2}}$')
+    axb.set_xlabel('Number of deep fields$_{\mathrm{'+str(nseasons)+'}}$')
     axb.set_ylabel('$z_{\mathrm{complete}}$')
     axb.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.show()
 
 
-def plotContour(ax, zfields, fDir, fName, slDir='input', slName='seasonlength_nvisits.npy', color='k'):
+def plotContour(ax, zfields, fDir, fName,
+                slDir='input', slName='seasonlength_nvisits.npy', color='k',
+                nseasons=2, season_length=6., cadence=1.):
     """
     Method to get results from the DDF_Scenario class
 
@@ -435,6 +442,10 @@ def plotContour(ax, zfields, fDir, fName, slDir='input', slName='seasonlength_nv
       location dir of (seasonlength vs nvisits) file (default: input)
     slName: str, opt
       (seasonlength vs nvisits) (default: seasonlength_nvisits.py)
+    nseasons: int, opt
+      number of seasons of observation (per field) (default: 2)
+    season_length: float, opt
+      season length of observation (in months) (default: 6)
 
     Returns
     ----------
@@ -442,13 +453,13 @@ def plotContour(ax, zfields, fDir, fName, slDir='input', slName='seasonlength_nv
 
     """
 
-    dd_scen = DDF_Scenario(zfields, fDir, fName,
+    dd_scen = DDF_Scenario(zfields, fDir, fName, cadence=cadence,
                            slDir=slDir, slName=slName)
 
     budmin = 0.06
     budmax = 0.15
     nfmin = 1
-    nfmax = 4
+    nfmax = 5
     zmin = 0.5
     zmax = 0.9
 
@@ -456,8 +467,10 @@ def plotContour(ax, zfields, fDir, fName, slDir='input', slName='seasonlength_nv
     nfields = np.linspace(nfmin, nfmax, 60)
     zlim = np.linspace(zmin, zmax, 100)
     NF, ZLIMIT = np.meshgrid(nfields, zlim)
-    BUD = dd_scen.budget(NF, ZLIMIT)
-    NSN = dd_scen.nsn_new(ZLIMIT, NF)
+    BUD = dd_scen.budget(NF, ZLIMIT, nseasons=nseasons,
+                         season_length=season_length)
+    NSN = dd_scen.nsn_new(ZLIMIT, NF, nseasons=nseasons,
+                          season_length=season_length)
     print(NSN)
     ax.imshow(BUD, extent=(nfmin, nfmax, zmin, zmax),
               aspect='auto', alpha=0.25, cmap='hsv')
@@ -500,6 +513,13 @@ parser.add_option('--nseason_ultra', type=str, default='2,2',
                   help='number of visits for ultra deep fields[%default]')
 parser.add_option("--visitsDir", type=str, default='visits_files',
                   help="directory where visits files are located[%default]")
+parser.add_option('--nseasons', type=int, default=2,
+                  help='number of seasons (not ultra_deep fields)[%default]')
+parser.add_option('--season_length', type=float, default=6.,
+                  help='season length (not ultra_deep fields)[%default]')
+parser.add_option('--cadence', type=float, default=1.,
+                  help='cadence of observation[%default]')
+
 
 opts, args = parser.parse_args()
 
@@ -509,11 +529,15 @@ nseasons_ultra = list(map(int, opts.nseason_ultra.split(',')))
 
 zfields = {}
 
-for i, vv in enumerate(ultraDeepFields):
-    zfields[vv] = {}
-    zfields[vv]['zlimit'] = z_ultra[i]
-    zfields[vv]['nseasons'] = nseasons_ultra[i]
+if ultraDeepFields != ['None']:
+    for i, vv in enumerate(ultraDeepFields):
+        zfields[vv] = {}
+        zfields[vv]['zlimit'] = z_ultra[i]
+        zfields[vv]['nseasons'] = nseasons_ultra[i]
 
 print(zfields)
 
-plotContourBudget(zfields, opts.visitsDir)
+plotContourBudget(zfields, opts.visitsDir,
+                  nseasons=opts.nseasons,
+                  season_length=opts.season_length,
+                  cadence=opts.cadence)
