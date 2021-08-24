@@ -14,7 +14,7 @@ plt.rcParams['ytick.labelsize'] = 15
 plt.rcParams['axes.labelsize'] = 15
 plt.rcParams['figure.titlesize'] = 15
 plt.rcParams['legend.fontsize'] = 15
-#plt.rcParams['font.weight'] = 'bold'
+# plt.rcParams['font.weight'] = 'bold'
 plt.rcParams['font.family'] = 'Arial'
 
 
@@ -85,6 +85,12 @@ class DDF_Scenario:
 
         self.ultraFields = zfields
 
+        if zfields:
+            self.DD_list = list(set(self.DD_list)-set(list(zfields.keys())))
+
+        self.DD_list.append('ADFS')
+        print(self.DD_list, list(zfields.keys()))
+
     def load(self, fDir, fName):
         """
         Method to load a file fDir/fName
@@ -138,6 +144,8 @@ class DDF_Scenario:
         tab = np.load('{}/{}'.format(slDir, slName), allow_pickle=True)
 
         res = {}
+        self.DD_list = np.unique(tab['name']).tolist()
+
         for fieldName in np.unique(tab['name']):
             idx = tab['name'] == fieldName
             sel = tab[idx]
@@ -199,10 +207,11 @@ class DDF_Scenario:
         Nvisits_DD = (budget*Nvisits_nonDD+(budget-1.)
                       * Nvisits_ultraDD)/(1.-budget)
 
-        nvisits = Nvisits_DD / \
+        nvisits_night = Nvisits_DD / \
             (Nfields*Nseasons*season_length*30.)/self.cadence_ref
-        print('aoooo', nvisits)
-        zlimit = self.zlim_visit[self.cadence_ref](nvisits)
+
+        print('aoooo', nvisits_night)
+        zlimit = self.zlim_visit[self.cadence_ref](nvisits_night)
 
         return np.round(zlimit, 4)
 
@@ -211,16 +220,46 @@ class DDF_Scenario:
         Nvisits_nonDD = 2122176
 
         Nvisits = self.visit_zlim[self.cadence_ref](zlim)
-        print('hhhhh', Nvisits)
+
+        # this is not correcting the season length vs exp time
         Nvisits_DD = Nfields*self.nvisits_field(
             Nvisits, season_length, nseasons, self.cadence_ref)
-
+        # this is correcting the season length vs exp time
+        """
+        res = self.get_season_length(Nfields, Nvisits, season_length)
+        Nvisits_DD = Nfields*self.nvisits_field(
+            Nvisits, res, nseasons, self.cadence_ref)
+        """
         for key, vals in self.ultraFields.items():
             print('io', key, vals)
             Nvisits_DD += self.nvisits_field(
                 vals['Nvisits'], vals['season_length'], vals['nseasons'], self.cadence_ref)
 
         return Nvisits_DD/(Nvisits_DD+Nvisits_nonDD)
+
+    def get_season_length(self, Nfields, Nvisits, season_length):
+
+        tt = Nfields[0].astype(int)
+        res = None
+        for vv in tt:
+            seas_length_all = None
+            for jo in range(vv):
+                dd_name = self.DD_list[jo]
+                seas_length = np.array(
+                    self.nvisits_seasonlength[dd_name](Nvisits[:, 0])/30.)
+                seas_length = np.where(
+                    seas_length > season_length, season_length, seas_length)
+                if seas_length_all is None:
+                    seas_length_all = np.copy(seas_length)
+                else:
+                    seas_length_all += np.copy(seas_length)
+            seas_length_all /= vv
+            seas_length_all.reshape((len(seas_length_all), 1))
+            if res is None:
+                res = np.copy(seas_length_all)
+            else:
+                res = np.column_stack((res, seas_length_all))
+        return res
 
     def nvisits_tot(self, config):
         """
@@ -293,6 +332,14 @@ class DDF_Scenario:
         nsn_field = Nfields*nseasons*vec_nsn(
             zmin, zlim, dz, season_length*30., survey_area)
 
+        Nvisits = self.visit_zlim[self.cadence_ref](zlim)
+        # this is to correct for the season length here
+        """
+        res = self.get_season_length(Nfields, Nvisits, season_length)
+
+        nsn_field = Nfields*nseasons*vec_nsn(
+            zmin, zlim, dz, res*30., survey_area)
+        """
         # add ultradeep fields
         for key, vals in self.ultraFields.items():
             nsn_field += vals['nseasons']*self.nsn_indiv(
@@ -390,9 +437,13 @@ class DDF_Scenario:
 
 def plotContourBudget(zfields, fDir,
                       slDir='input', slName='seasonlength_nvisits.npy',
-                      nseasons=2, season_length=6., cadence=1.):
+                      nseasons=2, season_length=6., cadence=1., nDD_max=4):
 
-    #fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
+    # fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
+    tt = 'Deep Rolling survey'
+    if not zfields:
+        tt = 'Deep Universal survey'
+
     leg = ''
     for kk in zfields.keys():
         leg += kk+'$^{'+str(zfields[kk]['zlimit']) + \
@@ -401,7 +452,7 @@ def plotContourBudget(zfields, fDir,
             leg += ' + '
     """
     fig, ax = plt.subplots(figsize=(8, 6))
- 
+
     fig.suptitle('N$_{\mathrm{visits}}^{y}$ = 80 - '+leg, weight='bold')
     fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_80.npy'
     plotContour(ax, zfields, fDir, fName,
@@ -410,13 +461,18 @@ def plotContourBudget(zfields, fDir,
     ax.set_ylabel('\mathrm{$z_{complete}$}')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     """
-    figb, axb = plt.subplots(figsize=(8, 6))
-    figb.suptitle('N$_{\mathrm{visits}}^{y}$ = 20 - '+leg)
+    figb, axb = plt.subplots(figsize=(10, 8))
+    tot_tit = tt
+    nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $20'
+    tot_tit += '\n \n {}'.format(nvisitsy)
+    if zfields:
+        tot_tit += ' - {}'.format(leg)
+    figb.suptitle(tot_tit)
     fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_20.npy'
     plotContour(axb, zfields, fDir, fName,
                 slDir=slDir, slName=slName, color='k',
                 nseasons=nseasons, season_length=season_length,
-                cadence=cadence)
+                cadence=cadence, nDD_max=nDD_max)
 
     axb.set_xlabel('Number of deep fields$_{\mathrm{'+str(nseasons)+'}}$')
     axb.set_ylabel('$z_{\mathrm{complete}}$')
@@ -426,7 +482,7 @@ def plotContourBudget(zfields, fDir,
 
 def plotContour(ax, zfields, fDir, fName,
                 slDir='input', slName='seasonlength_nvisits.npy', color='k',
-                nseasons=2, season_length=6., cadence=1.):
+                nseasons=2, season_length=6., cadence=1., nDD_max=4):
     """
     Method to get results from the DDF_Scenario class
 
@@ -446,6 +502,10 @@ def plotContour(ax, zfields, fDir, fName,
       number of seasons of observation (per field) (default: 2)
     season_length: float, opt
       season length of observation (in months) (default: 6)
+    cadence: int, opt
+      cadence of observations (default: 1)
+    nDD_max: int, opt
+      max DD number (default: 4)
 
     Returns
     ----------
@@ -459,7 +519,7 @@ def plotContour(ax, zfields, fDir, fName,
     budmin = 0.06
     budmax = 0.15
     nfmin = 1
-    nfmax = 5
+    nfmax = nDD_max
     zmin = 0.5
     zmax = 0.9
 
@@ -478,7 +538,7 @@ def plotContour(ax, zfields, fDir, fName,
     #             aspect='auto', alpha=0.25, cmap='hsv')
 
     zzv = [0.5, 0.6, 0.7, 0.8, 0.9]
-    zzv = [0.07, 0.08, 0.10, 0.12, 0.15]
+    zzv = [0.05, 0.07, 0.08, 0.10, 0.12, 0.15]
     CS = ax.contour(NF, ZLIMIT, BUD, zzv, colors='k')
 
     fmt = {}
@@ -489,8 +549,8 @@ def plotContour(ax, zfields, fDir, fName,
     ax.clabel(CS, inline=True, fontsize=10,
               colors='k', fmt=fmt)
 
-    #axb = ax.twinx()
-    zzv = [800, 1000, 1200, 1500, 2000, 2500, 3000]
+    # axb = ax.twinx()
+    zzv = [1000, 1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000]
     CSb = ax.contour(NF, ZLIMIT, gaussian_filter(
         NSN, sigma=1.5), zzv, colors='r')
 
@@ -519,6 +579,8 @@ parser.add_option('--season_length', type=float, default=6.,
                   help='season length (not ultra_deep fields)[%default]')
 parser.add_option('--cadence', type=float, default=1.,
                   help='cadence of observation[%default]')
+parser.add_option('--nDD_max', type=int, default=4,
+                  help='max number of DD fields[%default]')
 
 
 opts, args = parser.parse_args()
@@ -540,4 +602,4 @@ print(zfields)
 plotContourBudget(zfields, opts.visitsDir,
                   nseasons=opts.nseasons,
                   season_length=opts.season_length,
-                  cadence=opts.cadence)
+                  cadence=opts.cadence, nDD_max=opts.nDD_max)
