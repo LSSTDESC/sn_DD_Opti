@@ -48,7 +48,7 @@ class DDF_Scenario:
 
     def __init__(self, zfields, fDir, fName,
                  cadence=1,
-                 H0=72., Om0=0.30,
+                 H0=70., Om0=0.30,
                  min_rf_phase=-15, max_rf_phase=30.,
                  slDir='input', slName='seasonlength_nvisits.npy',
                  plot_refs=False):
@@ -302,7 +302,7 @@ class DDF_Scenario:
 
         """
         zmin = 0.01
-        dz = 0.01
+        dz = 0.0001
         survey_area = 9.6
         nsn_tot = 0
         for field in config['Fields']:
@@ -324,7 +324,7 @@ class DDF_Scenario:
     def nsn_new(self, zlim, Nfields, nseasons=2, season_length=6.):
 
         zmin = 0.01
-        dz = 0.01
+        dz = 0.0001
         survey_area = 9.6
         nsn_tot = 0
 
@@ -332,9 +332,9 @@ class DDF_Scenario:
         nsn_field = Nfields*nseasons*vec_nsn(
             zmin, zlim, dz, season_length*30., survey_area)
 
-        Nvisits = self.visit_zlim[self.cadence_ref](zlim)
         # this is to correct for the season length here
         """
+        Nvisits = self.visit_zlim[self.cadence_ref](zlim)
         res = self.get_season_length(Nfields, Nvisits, season_length)
 
         nsn_field = Nfields*nseasons*vec_nsn(
@@ -550,7 +550,7 @@ def plotContour(ax, zfields, fDir, fName,
               colors='k', fmt=fmt)
 
     # axb = ax.twinx()
-    zzv = [1000, 1200, 1500, 2000, 2500, 3000, 4000, 5000, 6000]
+    zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
     CSb = ax.contour(NF, ZLIMIT, gaussian_filter(
         NSN, sigma=1.5), zzv, colors='r')
 
