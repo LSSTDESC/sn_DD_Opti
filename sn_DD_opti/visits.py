@@ -90,21 +90,24 @@ class Show_Visits:
         zstep = 0.005
         zvals = np.arange(self.zmin, self.zmax+zstep, zstep)
 
+        lsb = dict(zip(['sum', 'g', 'r', 'i', 'z', 'y'], [
+                   'solid', 'dotted', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (5, 1)), (0, (3, 1, 1, 1, 1, 1))]))
+
         self.ax.plot(zvals, self.dictvisits['nvisits']
-                     (zvals), color='k', label='sum', lw=2)
+                     (zvals), color='k', label='sum', lw=3, ls=lsb['sum'])
 
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             self.ax.plot(zvals, self.dictvisits[key](
-                zvals), color=self.colors[b], label='${}$-band'.format(b), lw=2)
+                zvals), color=self.colors[b], label='${}$-band'.format(b), lw=3, ls=lsb[b])
         self.ax.grid()
         self.ax.set_xlabel('$z_{\mathrm{complete}}$')
         self.ax.set_ylabel(r'$\mathrm{N_{visits}}$')
         # self.ax.legend()
         # self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
         #               fontsize=12,frameon=False, loc='lower right')
-        self.ax.legend(bbox_to_anchor=(0.1, 1.17),
-                       loc='upper left', ncol=3, frameon=False)
+        self.ax.legend(bbox_to_anchor=(0.5, 1.17),
+                       loc='upper center', ncol=3, frameon=False)
         self.ax.set_ylim(0,)
         if self.nvisits_max > 0:
             self.ax.set_ylim(ymax=self.nvisits_max)
@@ -124,17 +127,17 @@ class Show_Visits:
 
         ylims = self.ax.get_ylim()
         nvisits = int(np.round(self.dictvisits['nvisits'](z)))
-        yref = 0.9*ylims[1]
+        yref = 0.85*ylims[1]
         scale = 0.1*ylims[1]
         nvstr = 'N$_{\mathrm{{visits}}}$'
         zstr = '$z_{\mathrm{complete}}$'
-        self.ax.text(0.6, yref, '{}= {}'.format(nvstr,
-                                                nvisits))
+        self.ax.text(0.55, yref, '{}= {}'.format(nvstr,
+                                                 nvisits))
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(np.round(self.dictvisits[key](z)))
             ff = 'N$_{\mathrm{visits}}^'+'{}'.format(b)+'$'
-            self.ax.text(0.6, 0.8*ylims[1]-scale*io,
+            self.ax.text(0.55, 0.85*ylims[1]-scale*(io+1),
                          '{} ={}'.format(ff, nvisits_b), color=self.colors[b])
 
         self.ax.text(0.9*z, np.min([1.5*nvisits, 280]),
@@ -195,7 +198,7 @@ class GUI_Visits(Show_Visits):
         root = tk.Tk()
         # figure where the plots will be drawn
         #self.fig = plt.Figure(figsize=(15, 10), dpi=100)
-        self.fig = plt.Figure(figsize=(12, 8), dpi=100)
+        self.fig = plt.Figure(figsize=(12, 9), dpi=100)
         self.ax = self.fig.add_subplot(111)
         #leg = 'days$^{-1}$'
         leg = 'day'
