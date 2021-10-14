@@ -1,4 +1,4 @@
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, griddata
 import numpy.lib.recfunctions as rf
 import copy
 from sn_rate import SN_Rate
@@ -8,6 +8,7 @@ import numpy as np
 from scipy.ndimage import zoom
 from scipy.ndimage.filters import gaussian_filter
 from matplotlib.ticker import MaxNLocator
+import pandas as pd
 
 plt.rcParams['xtick.labelsize'] = 15
 plt.rcParams['ytick.labelsize'] = 15
@@ -230,12 +231,16 @@ class DDF_Scenario:
         Nvisits_DD = Nfields*self.nvisits_field(
             Nvisits, res, nseasons, self.cadence_ref)
         """
+        Nvisits_DD_ultra = 0
         for key, vals in self.ultraFields.items():
             print('io', key, vals)
-            Nvisits_DD += self.nvisits_field(
+            Nvisits_DD_ultra += self.nvisits_field(
                 vals['Nvisits'], vals['season_length'], vals['nseasons'], self.cadence_ref)
 
-        return Nvisits_DD/(Nvisits_DD+Nvisits_nonDD)
+        Nvisits_DD_tot = Nvisits_DD+Nvisits_DD_ultra
+        bud = Nvisits_DD_tot/(Nvisits_DD_tot+Nvisits_nonDD)
+        #print('budget', Nfields, Nvisits_DD, Nvisits_DD_ultra, bud)
+        return bud
 
     def get_season_length(self, Nfields, Nvisits, season_length):
 
@@ -437,7 +442,8 @@ class DDF_Scenario:
 
 def plotContourBudget(zfields, fDir,
                       slDir='input', slName='seasonlength_nvisits.npy',
-                      nseasons=2, season_length=6., cadence=1., nDD_max=4):
+                      nseasons=2, season_length=6., cadence=1.,
+                      nDD_max=4, Ny=20, cosmo_res=pd.DataFrame()):
 
     # fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
     tt = 'Deep Rolling survey'
@@ -463,16 +469,17 @@ def plotContourBudget(zfields, fDir,
     """
     figb, axb = plt.subplots(figsize=(10, 8))
     tot_tit = tt
-    nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $20'
+    nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
     tot_tit += '\n \n {}'.format(nvisitsy)
     if zfields:
         tot_tit += ' - {}'.format(leg)
     figb.suptitle(tot_tit)
-    fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_20.npy'
+    fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_{}.npy'.format(
+        Ny)
     plotContour(axb, zfields, fDir, fName,
                 slDir=slDir, slName=slName, color='k',
                 nseasons=nseasons, season_length=season_length,
-                cadence=cadence, nDD_max=nDD_max)
+                cadence=cadence, nDD_max=nDD_max, cosmo_res=cosmo_res, var='sigma_w')
 
     axb.set_xlabel('Number of deep fields$_{\mathrm{'+str(nseasons)+'}}$')
     axb.set_ylabel('$z_{\mathrm{complete}}$')
@@ -482,7 +489,8 @@ def plotContourBudget(zfields, fDir,
 
 def plotContour(ax, zfields, fDir, fName,
                 slDir='input', slName='seasonlength_nvisits.npy', color='k',
-                nseasons=2, season_length=6., cadence=1., nDD_max=4):
+                nseasons=2, season_length=6., cadence=1., nDD_max=4,
+                cosmo_res=pd.DataFrame(), var='nsn_DD'):
     """
     Method to get results from the DDF_Scenario class
 
@@ -516,7 +524,7 @@ def plotContour(ax, zfields, fDir, fName,
     dd_scen = DDF_Scenario(zfields, fDir, fName, cadence=cadence,
                            slDir=slDir, slName=slName)
 
-    budmin = 0.06
+    budmin = 0.03
     budmax = 0.15
     nfmin = 1
     nfmax = nDD_max
@@ -526,19 +534,23 @@ def plotContour(ax, zfields, fDir, fName,
     budget = np.linspace(budmin, budmax, 1000)
     nfields = np.linspace(nfmin, nfmax, 60)
     zlim = np.linspace(zmin, zmax, 100)
+
     NF, ZLIMIT = np.meshgrid(nfields, zlim)
     BUD = dd_scen.budget(NF, ZLIMIT, nseasons=nseasons,
                          season_length=season_length)
-    NSN = dd_scen.nsn_new(ZLIMIT, NF, nseasons=nseasons,
-                          season_length=season_length)
-    print(NSN)
+    # this is the number of SN up to zlim
+    # NSN = dd_scen.nsn_new(ZLIMIT, NF, nseasons=nseasons,
+    #                      season_length=season_length)
+
+    ZLIMITB, NDDF, ZVAR = getVals(
+        cosmo_res, 'zcomp', 'nddf', var, nbins=5000, method='cubic')
     ax.imshow(BUD, extent=(nfmin, nfmax, zmin, zmax),
               aspect='auto', alpha=0.25, cmap='hsv')
     # ax[1].imshow(NSN, extent=(nfmin, nfmax, zmin, zmax),
     #             aspect='auto', alpha=0.25, cmap='hsv')
 
     zzv = [0.5, 0.6, 0.7, 0.8, 0.9]
-    zzv = [0.04, 0.05, 0.07, 0.08, 0.10, 0.12, 0.15]
+    zzv = [0.03, 0.05, 0.06, 0.07,  0.08, 0.10, 0.12, 0.15]
     CS = ax.contour(NF, ZLIMIT, BUD, zzv, colors='k')
 
     fmt = {}
@@ -550,17 +562,39 @@ def plotContour(ax, zfields, fDir, fName,
               colors='k', fmt=fmt)
 
     # axb = ax.twinx()
-    zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
-    CSb = ax.contour(NF, ZLIMIT, gaussian_filter(
-        NSN, sigma=1.5), zzv, colors='r')
-
+    #zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
+    zzv = [1000, 1500, 2000, 2500, 3000, 5000, 6000]
     fmt = {}
     strs = ['$%1i$' % zz for zz in zzv]
+    if var == 'sigma_w':
+        zzv = [0.010, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018]
+        strs = ['$%3.3f$' % zz for zz in zzv]
+    # CSb = ax.contour(NDDF, ZLIMITB, gaussian_filter(
+    #    ZVAR, sigma=3), zzv, colors='r')
+    CSb = ax.contour(NDDF, ZLIMITB, ZVAR, zzv, colors='r', linestyles='dashed')
+
     # strs = ['{}%'.format(np.int(zz)) for zz in zzvc]
     for l, s in zip(CSb.levels, strs):
         fmt[l] = s
     ax.clabel(CSb, inline=True, fontsize=10,
               colors='r', fmt=fmt)
+    ax.grid(alpha=0.3)
+
+
+def getVals(res, varx='zcomp', vary='sigma_w', varz='nddf', nbins=800, method='linear'):
+
+    xmin, xmax = res[varx].min(), res[varx].max()
+    xlim = np.linspace(xmin, xmax, nbins)
+    ymin, ymax = res[vary].min(), res[vary].max()
+    ylim = np.linspace(ymin, ymax, nbins)
+
+    X, Y = np.meshgrid(xlim, ylim)
+    #X, Y = xlim,ylim
+    X_grid = np.c_[np.ravel(X), np.ravel(Y)]
+    #Z = griddata((res[varx],res[vary]),res[varz],(X,Y),method=method)
+    Z = griddata((res[varx], res[vary]), res[varz], X_grid, method=method)
+    Z = Z.reshape(X.shape)
+    return X, Y, Z
 
 
 parser = OptionParser()
@@ -573,6 +607,8 @@ parser.add_option('--nseason_ultra', type=str, default='2,2',
                   help='number of visits for ultra deep fields[%default]')
 parser.add_option("--visitsDir", type=str, default='visits_files',
                   help="directory where visits files are located[%default]")
+parser.add_option("--cosmoDir", type=str, default='cosmo_files',
+                  help="directory where cosmo files are located[%default]")
 parser.add_option('--nseasons', type=int, default=2,
                   help='number of seasons (not ultra_deep fields)[%default]')
 parser.add_option('--season_length', type=float, default=6.,
@@ -581,7 +617,8 @@ parser.add_option('--cadence', type=float, default=1.,
                   help='cadence of observation[%default]')
 parser.add_option('--nDD_max', type=int, default=4,
                   help='max number of DD fields[%default]')
-
+parser.add_option('--Ny', type=int, default=20,
+                  help='max number of y-band visits [%default]')
 
 opts, args = parser.parse_args()
 
@@ -599,7 +636,25 @@ if ultraDeepFields != ['None']:
 
 print(zfields)
 
+# count the number of ultra_deep and get zlim
+n_ultra = len(zfields.keys())
+zlims = []
+for kk in zfields.keys():
+    print(zfields[kk])
+    zlims.append(zfields[kk]['zlimit'])
+
+# loading cosmology file
+prefix = 'cosmoSN'
+suffix = 'u'
+zli = '_'.join(['{}'.format(zz) for zz in zlims])
+if n_ultra > 0:
+    suffix = 'dr_{}'.format(zli)
+
+fName = '{}/{}_{}.hdf5'.format(opts.cosmoDir, prefix, suffix)
+cosmo_res = pd.read_hdf(fName)
+
 plotContourBudget(zfields, opts.visitsDir,
                   nseasons=opts.nseasons,
                   season_length=opts.season_length,
-                  cadence=opts.cadence, nDD_max=opts.nDD_max)
+                  cadence=opts.cadence, nDD_max=opts.nDD_max,
+                  Ny=opts.Ny, cosmo_res=cosmo_res)
