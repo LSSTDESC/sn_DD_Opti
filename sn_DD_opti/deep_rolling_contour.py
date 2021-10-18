@@ -443,13 +443,15 @@ class DDF_Scenario:
 def plotContourBudget(zfields, fDir,
                       slDir='input', slName='seasonlength_nvisits.npy',
                       nseasons=2, season_length=6., cadence=1.,
-                      nDD_max=4, Ny=20, cosmo_res=pd.DataFrame()):
+                      nDD_max=4, Ny=20, cosmo_res=pd.DataFrame(),
+                      toplot='sigma_w'):
 
     # fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
     tt = 'Deep Rolling survey'
+    runtype = 'deep_rolling'
     if not zfields:
         tt = 'Deep Universal survey'
-
+        runtype = 'universal'
     leg = ''
     for kk in zfields.keys():
         leg += kk+'$^{'+str(zfields[kk]['zlimit']) + \
@@ -479,7 +481,8 @@ def plotContourBudget(zfields, fDir,
     plotContour(axb, zfields, fDir, fName,
                 slDir=slDir, slName=slName, color='k',
                 nseasons=nseasons, season_length=season_length,
-                cadence=cadence, nDD_max=nDD_max, cosmo_res=cosmo_res, var='sigma_w')
+                cadence=cadence, nDD_max=nDD_max, cosmo_res=cosmo_res,
+                var=toplot, runtype=runtype)
 
     axb.set_xlabel('Number of deep fields$_{\mathrm{'+str(nseasons)+'}}$')
     axb.set_ylabel('$z_{\mathrm{complete}}$')
@@ -490,7 +493,7 @@ def plotContourBudget(zfields, fDir,
 def plotContour(ax, zfields, fDir, fName,
                 slDir='input', slName='seasonlength_nvisits.npy', color='k',
                 nseasons=2, season_length=6., cadence=1., nDD_max=4,
-                cosmo_res=pd.DataFrame(), var='nsn_DD'):
+                cosmo_res=pd.DataFrame(), var='nsn_DD', runtype='deep_rolling'):
     """
     Method to get results from the DDF_Scenario class
 
@@ -528,7 +531,7 @@ def plotContour(ax, zfields, fDir, fName,
     budmax = 0.15
     nfmin = 1
     nfmax = nDD_max
-    zmin = 0.5
+    zmin = 0.55
     zmax = 0.9
 
     budget = np.linspace(budmin, budmax, 1000)
@@ -543,14 +546,18 @@ def plotContour(ax, zfields, fDir, fName,
     #                      season_length=season_length)
 
     ZLIMITB, NDDF, ZVAR = getVals(
-        cosmo_res, 'zcomp', 'nddf', var, nbins=5000, method='cubic')
+        cosmo_res, 'zcomp', 'nddf', var, nbins=100, method='linear')
     ax.imshow(BUD, extent=(nfmin, nfmax, zmin, zmax),
               aspect='auto', alpha=0.25, cmap='hsv')
     # ax[1].imshow(NSN, extent=(nfmin, nfmax, zmin, zmax),
     #             aspect='auto', alpha=0.25, cmap='hsv')
 
     zzv = [0.5, 0.6, 0.7, 0.8, 0.9]
-    zzv = [0.03, 0.05, 0.06, 0.07,  0.08, 0.10, 0.12, 0.15]
+    if runtype == 'deep_rolling':
+        zzv = [0.03, 0.05, 0.06, 0.07,  0.08, 0.10, 0.12, 0.15]
+    if runtype == 'universal':
+        zzv = [0.03, 0.05, 0.08, 0.12, 0.15]
+
     CS = ax.contour(NF, ZLIMIT, BUD, zzv, colors='k')
 
     fmt = {}
@@ -563,16 +570,26 @@ def plotContour(ax, zfields, fDir, fName,
 
     # axb = ax.twinx()
     #zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
-    zzv = [1000, 1500, 2000, 2500, 3000, 5000, 6000]
+    if runtype == 'deep_rolling':
+        zzv = [1000, 1500, 2000, 2500, 3000, 5000, 6000]
+    if runtype == 'universal':
+        zzv = [4000, 5000, 6000, 8000, 10000]
     fmt = {}
     strs = ['$%1i$' % zz for zz in zzv]
     if var == 'sigma_w':
-        zzv = [0.010, 0.012, 0.013, 0.014, 0.015, 0.016, 0.017, 0.018]
+        if runtype == 'deep_rolling':
+            zzv = [0.010, 0.012, 0.013, 0.014, 0.015,
+                   0.016, 0.017, 0.018, 0.020]
+        if runtype == 'universal':
+            zzv = [0.010, 0.013, 0.015, 0.018]
         strs = ['$%3.3f$' % zz for zz in zzv]
     # CSb = ax.contour(NDDF, ZLIMITB, gaussian_filter(
     #    ZVAR, sigma=3), zzv, colors='r')
-    CSb = ax.contour(NDDF, ZLIMITB, ZVAR, zzv, colors='r', linestyles='dashed')
-
+    CSb = ax.contour(NDDF, ZLIMITB, gaussian_filter(
+        ZVAR, sigma=4), zzv, colors='r', linestyles='dashed')
+    print(ZVAR)
+    print(ZLIMITB)
+    print(NDDF)
     # strs = ['{}%'.format(np.int(zz)) for zz in zzvc]
     for l, s in zip(CSb.levels, strs):
         fmt[l] = s
@@ -619,7 +636,8 @@ parser.add_option('--nDD_max', type=int, default=4,
                   help='max number of DD fields[%default]')
 parser.add_option('--Ny', type=int, default=20,
                   help='max number of y-band visits [%default]')
-
+parser.add_option('--var_to_plot', type='str', default='sigma_w',
+                  help='var to plot in addition to the budget (sigma_w,nsn_DD) [%default]')
 opts, args = parser.parse_args()
 
 ultraDeepFields = opts.ultraDeep.split(',')
@@ -645,10 +663,13 @@ for kk in zfields.keys():
 
 # loading cosmology file
 prefix = 'cosmoSN'
-suffix = 'u'
+suffix = 'universal_10'
 zli = '_'.join(['{}'.format(zz) for zz in zlims])
-if n_ultra > 0:
-    suffix = 'dr_{}'.format(zli)
+if n_ultra >= 2:
+    zlia = '{}'.format(z_ultra[0]).ljust(4, '0')
+    zlib = '{}'.format(z_ultra[1]).ljust(4, '0')
+    suffix = 'deep_rolling_{}_{}_{}_{}'.format(
+        zlia, zlib, nseasons_ultra[0], nseasons_ultra[1])
 
 fName = '{}/{}_{}.hdf5'.format(opts.cosmoDir, prefix, suffix)
 cosmo_res = pd.read_hdf(fName)
@@ -657,4 +678,4 @@ plotContourBudget(zfields, opts.visitsDir,
                   nseasons=opts.nseasons,
                   season_length=opts.season_length,
                   cadence=opts.cadence, nDD_max=opts.nDD_max,
-                  Ny=opts.Ny, cosmo_res=cosmo_res)
+                  Ny=opts.Ny, cosmo_res=cosmo_res, toplot=opts.var_to_plot)
