@@ -10,11 +10,12 @@ from scipy.ndimage.filters import gaussian_filter
 from matplotlib.ticker import MaxNLocator
 import pandas as pd
 
-plt.rcParams['xtick.labelsize'] = 15
-plt.rcParams['ytick.labelsize'] = 15
-plt.rcParams['axes.labelsize'] = 15
-plt.rcParams['figure.titlesize'] = 15
-plt.rcParams['legend.fontsize'] = 15
+plt.rcParams['xtick.labelsize'] = 20
+plt.rcParams['ytick.labelsize'] = 20
+plt.rcParams['axes.labelsize'] = 25
+plt.rcParams['figure.titlesize'] = 25
+plt.rcParams['legend.fontsize'] = 25
+plt.rcParams['lines.linewidth'] = 3
 # plt.rcParams['font.weight'] = 'bold'
 plt.rcParams['font.family'] = 'Arial'
 
@@ -470,9 +471,10 @@ def plotContourBudget(zfields, fDir,
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     """
     figb, axb = plt.subplots(figsize=(10, 8))
+    figb.subplots_adjust(top=0.85)
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
-    tot_tit += '\n \n {}'.format(nvisitsy)
+    tot_tit += '\n  {}'.format(nvisitsy)
     if zfields:
         tot_tit += ' - {}'.format(leg)
     figb.suptitle(tot_tit)
@@ -532,7 +534,9 @@ def plotContour(ax, zfields, fDir, fName,
     nfmin = 1
     nfmax = nDD_max
     zmin = 0.55
-    zmax = 0.9
+    zmax = 0.90
+    if runtype == 'universal':
+        zmax = 0.85
 
     budget = np.linspace(budmin, budmax, 1000)
     nfields = np.linspace(nfmin, nfmax, 60)
@@ -558,6 +562,7 @@ def plotContour(ax, zfields, fDir, fName,
     if runtype == 'universal':
         zzv = [0.03, 0.05, 0.08, 0.12, 0.15]
 
+    BUD = gaussian_filter(BUD, sigma=3)
     CS = ax.contour(NF, ZLIMIT, BUD, zzv, colors='k')
 
     fmt = {}
@@ -565,13 +570,15 @@ def plotContour(ax, zfields, fDir, fName,
     # strs = ['{}%'.format(np.int(zz)) for zz in zzvc]
     for l, s in zip(CS.levels, strs):
         fmt[l] = s
-    ax.clabel(CS, inline=True, fontsize=10,
+
+    fontsize = 20
+    ax.clabel(CS, inline=True, fontsize=fontsize,
               colors='k', fmt=fmt)
 
     # axb = ax.twinx()
     #zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
     if runtype == 'deep_rolling':
-        zzv = [1000, 1500, 2000, 2500, 3000, 5000, 6000]
+        zzv = [1000, 1500, 2000, 2500, 3000, 3500, 5000, 6000]
     if runtype == 'universal':
         zzv = [4000, 5000, 6000, 8000, 10000]
     fmt = {}
@@ -585,17 +592,18 @@ def plotContour(ax, zfields, fDir, fName,
         strs = ['$%3.3f$' % zz for zz in zzv]
     # CSb = ax.contour(NDDF, ZLIMITB, gaussian_filter(
     #    ZVAR, sigma=3), zzv, colors='r')
-    CSb = ax.contour(NDDF, ZLIMITB, gaussian_filter(
-        ZVAR, sigma=4), zzv, colors='r', linestyles='dashed')
+    ZVAR = gaussian_filter(ZVAR, sigma=3)
+    CSb = ax.contour(NDDF, ZLIMITB, ZVAR, zzv, colors='r', linestyles='dashed')
     print(ZVAR)
     print(ZLIMITB)
     print(NDDF)
     # strs = ['{}%'.format(np.int(zz)) for zz in zzvc]
     for l, s in zip(CSb.levels, strs):
         fmt[l] = s
-    ax.clabel(CSb, inline=True, fontsize=10,
+    ax.clabel(CSb, inline=True, fontsize=fontsize,
               colors='r', fmt=fmt)
     ax.grid(alpha=0.3)
+    ax.set_ylim([zmin, zmax])
 
 
 def getVals(res, varx='zcomp', vary='sigma_w', varz='nddf', nbins=800, method='linear'):
