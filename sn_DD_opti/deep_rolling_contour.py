@@ -586,7 +586,7 @@ def plotContour(ax, zfields, fDir, fName,
     if var == 'sigma_w':
         if runtype == 'deep_rolling':
             zzv = [0.010, 0.012, 0.013, 0.014, 0.015,
-                   0.016, 0.017, 0.018, 0.020]
+                   0.016, 0.017, 0.018, 0.020, 0.05, 0.06, 0.07, 0.08]
         if runtype == 'universal':
             zzv = [0.010, 0.013, 0.015, 0.018]
         strs = ['$%3.3f$' % zz for zz in zzv]
