@@ -20,6 +20,169 @@ plt.rcParams['lines.linewidth'] = 3
 plt.rcParams['font.family'] = 'Arial'
 
 
+class DD_Budget:
+    """
+    class to estimate the DD budget for a survey configuration
+
+    Parameters
+    ---------------
+    fDir: str
+      location dir of (nvisits, zlim) file
+    fName: str
+      (nvisits, zlim) filename
+    cadence: int, opt
+      cadence of observation (default: 1 day)
+    Nvisits_nonDD: int,opt
+      total number of non-DD visits (default: 2122176)
+    slDir: str, opt
+      location dir of (seasonlength vs nvisits) file (default: input)
+    slName: str, opt
+      (seasonlength vs nvisits) (default: seasonlength_nvisits.py)
+    """
+
+    def __init__(self, fDir, fName,
+                 cadence=1, Nvisits_nonDD=2122176,
+                 slDir='input', slName='seasonlength_nvisits.npy'):
+
+        self.cadence = cadence
+        self.Nvisits_nonDD = Nvisits_nonDD
+        self.zlim_visit, self.visit_zlim = self.load(fDir, fName)
+
+        self.nvisits_seasonlength = self.load_seasonlength_nvisits(
+            slDir, slName)
+
+    def load(self, fDir, fName):
+        """
+        Method to load a file fDir/fName
+
+        Parameters
+        --------------
+        fDir: str
+          location dir of the file
+        fName: str
+          file name
+
+        Returns
+        -----------
+        dict of interp1d
+          key: cadence
+          values: interp1d(nvisits, z)
+
+        """
+
+        from wrapper import Mod_z
+        # tab = np.load(fName, allow_pickle=True)
+        tab = Mod_z('{}/{}'.format(fDir, fName)).nvisits
+        res = {}
+        resb = {}
+        print(tab)
+        for cad in np.unique(tab['cadence']):
+            idx = tab['cadence'] == cad
+            sel = tab[idx]
+            res[cad] = interp1d(sel['Nvisits'], sel['z'],
+                                bounds_error=False, fill_value=0.)
+            resb[cad] = interp1d(sel['z'], sel['Nvisits'],
+                                 bounds_error=False, fill_value=0.)
+        return res, resb
+
+    def load_seasonlength_nvisits(self, slDir, slName):
+        """
+        Method to load (seasonlength, nvisits) file and make interp1d out of it
+
+        Parameters
+        ---------------
+        slDir: str
+          location dir of (seasonlength vs nvisits) file
+        slName: str
+          (seasonlength vs nvisits)
+
+        Returns
+        -----------
+        dict of interp1d(nvisits, seasonlength); key: field name
+        """
+
+        tab = np.load('{}/{}'.format(slDir, slName), allow_pickle=True)
+
+        res = {}
+        self.DD_list = np.unique(tab['name']).tolist()
+
+        for fieldName in np.unique(tab['name']):
+            idx = tab['name'] == fieldName
+            sel = tab[idx]
+            res[fieldName] = interp1d(sel['nvisits'], sel['season_length'],
+                                      bounds_error=False, fill_value=0.)
+        return res
+
+    def __call__(self, cosmodf):
+
+        print(cosmodf.columns)
+        cosmodf['budget'] = cosmodf.apply(
+            lambda x: self.budget(x), axis=1)
+
+        print('finally', cosmodf)
+
+        return cosmodf
+
+    def budget(self, grp):
+        """
+        Method to estimate the budget corresponding to a survey summarized in grp
+
+        Parameters
+        ---------------
+        grp: pandas group
+          with infos related to the survey
+        """
+        print('hello', grp)
+        Nvisits_tot = 0
+        Nvisits_tot += self.Nvisits_field(grp, 'ultra')
+        Nvisits_tot += self.Nvisits_field(grp, 'dd')
+
+        budget = Nvisits_tot/(Nvisits_tot+self.Nvisits_nonDD)
+
+        # return pd.DataFrame({'budget': [budget]})
+        return budget
+
+    def Nvisits_field(self, grp, suffix='ultra'):
+
+        Nvisits_tot = 0
+        ddf = grp['ddf_{}'.format(suffix)]
+        zcomp = grp['zcomp_{}'.format(suffix)]
+        nseasons = grp['nseasons_{}'.format(suffix)]
+        nddf = len(ddf)
+        print('helli', ddf, zcomp)
+        for i in range(nddf):
+            # get the number of visits per night corresponding to zcomp
+            nvisits_night = self.visit_zlim[self.cadence](zcomp[i])
+            season_length = self.nvisits_seasonlength[ddf[i]](
+                nvisits_night)
+            season_length = np.min([season_length, 180.])
+            Nvisits_all_seas = self.Nvisits_seasons(
+                nvisits_night, season_length, nseasons[i])
+            print(ddf[i], zcomp[i],
+                  nseasons[i], nvisits_night, season_length, Nvisits_all_seas)
+            Nvisits_tot += Nvisits_all_seas
+
+        return Nvisits_tot
+
+    def Nvisits_seasons(self, nvisits_night, season_length, nseasons):
+        """
+        Total number of visits over a season
+
+        Parameters
+        ---------------
+        nvisits_night: int
+          number of visits per obs night
+        season_length: float
+          season length (in days)
+        nseasons: int
+          number of seasons of obs.
+        """
+
+        N_nights = nseasons*season_length/self.cadence
+
+        return N_nights*nvisits_night
+
+
 class DDF_Scenario:
     """
     class to estimate the DD budget for a set of scenarios
@@ -240,7 +403,7 @@ class DDF_Scenario:
 
         Nvisits_DD_tot = Nvisits_DD+Nvisits_DD_ultra
         bud = Nvisits_DD_tot/(Nvisits_DD_tot+Nvisits_nonDD)
-        #print('budget', Nfields, Nvisits_DD, Nvisits_DD_ultra, bud)
+        # print('budget', Nfields, Nvisits_DD, Nvisits_DD_ultra, bud)
         return bud
 
     def get_season_length(self, Nfields, Nvisits, season_length):
@@ -445,7 +608,7 @@ def plotContourBudget(zfields, fDir,
                       slDir='input', slName='seasonlength_nvisits.npy',
                       nseasons=2, season_length=6., cadence=1.,
                       nDD_max=4, Ny=20, cosmo_res=pd.DataFrame(),
-                      toplot='sigma_w'):
+                      toplot='sigma_w', xaxis='nddf'):
 
     # fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
     tt = 'Deep Rolling survey'
@@ -484,9 +647,10 @@ def plotContourBudget(zfields, fDir,
                 slDir=slDir, slName=slName, color='k',
                 nseasons=nseasons, season_length=season_length,
                 cadence=cadence, nDD_max=nDD_max, cosmo_res=cosmo_res,
-                var=toplot, runtype=runtype)
+                var=toplot, runtype=runtype, xaxis=xaxis)
 
-    axb.set_xlabel('Number of deep fields$_{\mathrm{'+str(nseasons)+'}}$')
+    if xaxis == 'nddf':
+        axb.set_xlabel('Number of deep fields$_{\mathrm{'+str(nseasons)+'}}$')
     axb.set_ylabel('$z_{\mathrm{complete}}$')
     axb.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.show()
@@ -495,7 +659,7 @@ def plotContourBudget(zfields, fDir,
 def plotContour(ax, zfields, fDir, fName,
                 slDir='input', slName='seasonlength_nvisits.npy', color='k',
                 nseasons=2, season_length=6., cadence=1., nDD_max=4,
-                cosmo_res=pd.DataFrame(), var='nsn_DD', runtype='deep_rolling'):
+                cosmo_res=pd.DataFrame(), var='nsn_DD', runtype='deep_rolling', xaxis='nddf'):
     """
     Method to get results from the DDF_Scenario class
 
@@ -519,7 +683,8 @@ def plotContour(ax, zfields, fDir, fName,
       cadence of observations (default: 1)
     nDD_max: int, opt
       max DD number (default: 4)
-
+    xaxis: str, opt
+      xaxis variable (default: nddf)
     Returns
     ----------
     numpy arrays with results
@@ -550,7 +715,7 @@ def plotContour(ax, zfields, fDir, fName,
     #                      season_length=season_length)
 
     ZLIMITB, NDDF, ZVAR = getVals(
-        cosmo_res, 'zcomp', 'nddf', var, nbins=100, method='linear')
+        cosmo_res, 'zcomp', xaxis, var, nbins=100, method='linear')
     ax.imshow(BUD, extent=(nfmin, nfmax, zmin, zmax),
               aspect='auto', alpha=0.25, cmap='hsv')
     # ax[1].imshow(NSN, extent=(nfmin, nfmax, zmin, zmax),
@@ -576,7 +741,137 @@ def plotContour(ax, zfields, fDir, fName,
               colors='k', fmt=fmt)
 
     # axb = ax.twinx()
-    #zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
+    # zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
+    if runtype == 'deep_rolling':
+        zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
+    if runtype == 'universal':
+        zzv = [4000, 5000, 6000, 8000, 10000, 14000]
+    fmt = {}
+    strs = ['$%1i$' % zz for zz in zzv]
+    if var == 'sigma_w':
+        if runtype == 'deep_rolling':
+            zzv = [0.010, 0.011, 0.012, 0.013, 0.014, 0.015,
+                   0.016, 0.017, 0.018, 0.020, 0.05, 0.06, 0.07, 0.08]
+        if runtype == 'universal':
+            zzv = [0.010, 0.013, 0.015, 0.018]
+        strs = ['$%3.3f$' % zz for zz in zzv]
+    # CSb = ax.contour(NDDF, ZLIMITB, gaussian_filter(
+    #    ZVAR, sigma=3), zzv, colors='r')
+    ZVAR = gaussian_filter(ZVAR, sigma=3)
+    CSb = ax.contour(NDDF, ZLIMITB, ZVAR, zzv, colors='r', linestyles='dashed')
+    print(ZVAR)
+    print(ZLIMITB)
+    print(NDDF)
+    # strs = ['{}%'.format(np.int(zz)) for zz in zzvc]
+    for l, s in zip(CSb.levels, strs):
+        fmt[l] = s
+    ax.clabel(CSb, inline=True, fontsize=fontsize,
+              colors='r', fmt=fmt)
+    ax.grid(alpha=0.3)
+    ax.set_ylim([zmin, zmax])
+
+
+def plotContour_new(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='nddf_dd'):
+    """
+    Method to get results from the DDF_Scenario class
+
+    Parameters
+    ---------------
+    zfields: dict
+      dict of fields with fixed zlim
+    fDir: str
+      location dir of (nvisits, zlim) file
+    fName: str
+      (nvisits, zlim) filename
+    slDir: str, opt
+      location dir of (seasonlength vs nvisits) file (default: input)
+    slName: str, opt
+      (seasonlength vs nvisits) (default: seasonlength_nvisits.py)
+    nseasons: int, opt
+      number of seasons of observation (per field) (default: 2)
+    season_length: float, opt
+      season length of observation (in months) (default: 6)
+    cadence: int, opt
+      cadence of observations (default: 1)
+    nDD_max: int, opt
+      max DD number (default: 4)
+    xaxis: str, opt
+      xaxis variable (default: nddf)
+    Returns
+    ----------
+    numpy arrays with results
+
+    """
+    print(cosmo_res.columns)
+    cosmo_res['zcomp_dd_unique'] = cosmo_res.apply(
+        lambda x: np.mean(x['zcomp_dd']), axis=1)
+    cosmo_res['zcomp_dd_ultra'] = cosmo_res.apply(
+        lambda x: np.mean(x['zcomp_ultra']), axis=1)
+    cosmo_res['nddf_ultra'] = cosmo_res.apply(
+        lambda x:  len(x['ddf_ultra']), axis=1)
+    cosmo_res['nddf_dd'] = cosmo_res.apply(
+        lambda x:  len(x['ddf_dd']), axis=1)
+    cosmo_res['nddf'] = cosmo_res['nddf_ultra']+cosmo_res['nddf_dd']
+
+    idx = cosmo_res['nddf_dd'] >= 1
+    cosmo_res = cosmo_res[idx]
+
+    print(
+        'hhhhh', cosmo_res[['nddf', 'zcomp_dd_unique', 'zcomp_dd_ultra', 'budget']])
+    budmin = 0.03
+    budmax = 0.15
+    nfmin = 1
+    nfmax = np.max(cosmo_res['nddf_dd'])
+    zmin = 0.55
+    zmax = 0.90
+    if runtype == 'universal':
+        zmax = 0.85
+
+    budget = np.linspace(budmin, budmax, 1000)
+    nfields = np.linspace(nfmin, nfmax, 60)
+    zlim = np.linspace(zmin, zmax, 100)
+
+    NF, ZLIMIT = np.meshgrid(nfields, zlim)
+    # BUD = dd_scen.budget(NF, ZLIMIT, nseasons=nseasons,
+    #                     season_length=season_length)
+    # this is the number of SN up to zlim
+    # NSN = dd_scen.nsn_new(ZLIMIT, NF, nseasons=nseasons,
+    #                      season_length=season_length)
+
+    ZLIMITB, NDDF, BUD = getVals(
+        cosmo_res, 'zcomp_dd_unique', xaxis, 'budget', nbins=100, method='linear')
+    print('bud', BUD)
+
+    ax.imshow(BUD, extent=(nfmin, nfmax, zmin, zmax),
+              aspect='auto', alpha=0.25, cmap='hsv')
+
+    ZLIMITB, NDDF, ZVAR = getVals(
+        cosmo_res, 'zcomp_dd_unique', xaxis, var, nbins=100, method='linear')
+
+    # ax[1].imshow(NSN, extent=(nfmin, nfmax, zmin, zmax),
+    #             aspect='auto', alpha=0.25, cmap='hsv')
+
+    zzv = [0.5, 0.6, 0.7, 0.8, 0.9]
+    if runtype == 'deep_rolling':
+        zzv = [0.03, 0.05, 0.06, 0.07,  0.08, 0.10, 0.12, 0.15]
+    if runtype == 'universal':
+        zzv = [0.03, 0.05, 0.08, 0.12, 0.15]
+    fontsize = 20
+
+    BUD = gaussian_filter(BUD, sigma=3)
+    CS = ax.contour(NDDF, ZLIMITB, BUD, zzv, colors='k')
+
+    fmt = {}
+    strs = ['$%3.2f$' % zz for zz in zzv]
+    # strs = ['{}%'.format(np.int(zz)) for zz in zzvc]
+    for l, s in zip(CS.levels, strs):
+        fmt[l] = s
+
+    ax.clabel(CS, inline=True, fontsize=fontsize,
+              colors='k', fmt=fmt)
+
+    # axb = ax.twinx()
+    # zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
     if runtype == 'deep_rolling':
         zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
     if runtype == 'universal':
@@ -612,11 +907,10 @@ def getVals(res, varx='zcomp', vary='sigma_w', varz='nddf', nbins=800, method='l
     xlim = np.linspace(xmin, xmax, nbins)
     ymin, ymax = res[vary].min(), res[vary].max()
     ylim = np.linspace(ymin, ymax, nbins)
-
     X, Y = np.meshgrid(xlim, ylim)
-    #X, Y = xlim,ylim
     X_grid = np.c_[np.ravel(X), np.ravel(Y)]
-    #Z = griddata((res[varx],res[vary]),res[varz],(X,Y),method=method)
+    # Z = griddata((res[varx],res[vary]),res[varz],(X,Y),method=method)
+    print('booo', len(res[varx]), len(res[vary]), len(res[varz]))
     Z = griddata((res[varx], res[vary]), res[varz], X_grid, method=method)
     Z = Z.reshape(X.shape)
     return X, Y, Z
@@ -646,11 +940,32 @@ parser.add_option('--Ny', type=int, default=20,
                   help='max number of y-band visits [%default]')
 parser.add_option('--var_to_plot', type='str', default='sigma_w',
                   help='var to plot in addition to the budget (sigma_w,nsn_DD) [%default]')
+parser.add_option('--xaxis', type='str', default='nddf',
+                  help='xaxis var (nddf,nseasons_ultra) [%default]')
+parser.add_option('--cosmoFile', type='str', default='cosmoSN_deep_rolling_0.80_0.80_2_2',
+                  help='cosmo file to process[%default]')
+
 opts, args = parser.parse_args()
 
 ultraDeepFields = opts.ultraDeep.split(',')
 z_ultra = list(map(float, opts.z_ultra.split(',')))
 nseasons_ultra = list(map(int, opts.nseason_ultra.split(',')))
+xaxis = opts.xaxis
+visitsDir = opts.visitsDir
+Ny = opts.Ny
+fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_{}.npy'.format(
+    Ny)
+
+budget = DD_Budget(visitsDir, fName)
+
+cosmoName = '{}/{}.hdf5'.format(opts.cosmoDir, opts.cosmoFile)
+print('loading', fName)
+cosmo_res = pd.read_hdf(cosmoName)
+
+cosmo_res = budget(cosmo_res)
+fig, ax = plt.subplots()
+plotContour_new(ax, cosmo_res)
+plt.show()
 
 zfields = {}
 
@@ -680,10 +995,12 @@ if n_ultra >= 2:
         zlia, zlib, nseasons_ultra[0], nseasons_ultra[1])
 
 fName = '{}/{}_{}.hdf5'.format(opts.cosmoDir, prefix, suffix)
+print('loading', fName)
 cosmo_res = pd.read_hdf(fName)
 
+print('hello zfields', zfields)
 plotContourBudget(zfields, opts.visitsDir,
                   nseasons=opts.nseasons,
                   season_length=opts.season_length,
                   cadence=opts.cadence, nDD_max=opts.nDD_max,
-                  Ny=opts.Ny, cosmo_res=cosmo_res, toplot=opts.var_to_plot)
+                  Ny=opts.Ny, cosmo_res=cosmo_res, toplot=opts.var_to_plot, xaxis=xaxis)
