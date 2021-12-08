@@ -119,6 +119,18 @@ class DD_Budget:
         cosmodf['budget'] = cosmodf.apply(
             lambda x: self.budget(x), axis=1)
 
+        cosmodf['zcomp_dd_unique'] = cosmodf.apply(
+            lambda x: np.mean(x['zcomp_dd']), axis=1)
+        cosmodf['zcomp_ultra_unique'] = cosmodf.apply(
+            lambda x: np.mean(x['zcomp_ultra']), axis=1)
+        cosmodf['nseasons_ultra_unique'] = cosmodf.apply(
+            lambda x: np.mean(x['nseasons_ultra']), axis=1)
+        cosmodf['nddf_ultra'] = cosmodf.apply(
+            lambda x:  len(x['ddf_ultra']), axis=1)
+        cosmodf['nddf_dd'] = cosmodf.apply(
+            lambda x:  len(x['ddf_dd']), axis=1)
+        cosmodf['nddf'] = cosmodf['nddf_ultra']+cosmodf['nddf_dd']
+
         print('finally', cosmodf)
 
         return cosmodf
@@ -771,7 +783,7 @@ def plotContour(ax, zfields, fDir, fName,
     ax.set_ylim([zmin, zmax])
 
 
-def plotContour_new(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='nddf_dd'):
+def plotContour_new(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='nddf_dd', yaxis='zcomp_ultra_unique'):
     """
     Method to get results from the DDF_Scenario class
 
@@ -803,27 +815,19 @@ def plotContour_new(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis=
 
     """
     print(cosmo_res.columns)
-    cosmo_res['zcomp_dd_unique'] = cosmo_res.apply(
-        lambda x: np.mean(x['zcomp_dd']), axis=1)
-    cosmo_res['zcomp_dd_ultra'] = cosmo_res.apply(
-        lambda x: np.mean(x['zcomp_ultra']), axis=1)
-    cosmo_res['nddf_ultra'] = cosmo_res.apply(
-        lambda x:  len(x['ddf_ultra']), axis=1)
-    cosmo_res['nddf_dd'] = cosmo_res.apply(
-        lambda x:  len(x['ddf_dd']), axis=1)
-    cosmo_res['nddf'] = cosmo_res['nddf_ultra']+cosmo_res['nddf_dd']
 
+    """
     idx = cosmo_res['nddf_dd'] >= 1
     cosmo_res = cosmo_res[idx]
-
+    """
     print(
-        'hhhhh', cosmo_res[['nddf', 'zcomp_dd_unique', 'zcomp_dd_ultra', 'budget']])
+        'hhhhh', cosmo_res[['nddf', 'zcomp_dd_unique', 'zcomp_ultra_unique', 'budget', 'nddf_dd']])
     budmin = 0.03
     budmax = 0.15
-    nfmin = 1
-    nfmax = np.max(cosmo_res['nddf_dd'])
-    zmin = 0.55
-    zmax = 0.90
+    nfmin = np.min(cosmo_res[xaxis])
+    nfmax = np.max(cosmo_res[xaxis])
+    zmin = np.min(cosmo_res[yaxis])
+    zmax = np.max(cosmo_res[yaxis])
     if runtype == 'universal':
         zmax = 0.85
 
@@ -839,14 +843,14 @@ def plotContour_new(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis=
     #                      season_length=season_length)
 
     ZLIMITB, NDDF, BUD = getVals(
-        cosmo_res, 'zcomp_dd_unique', xaxis, 'budget', nbins=100, method='linear')
+        cosmo_res, yaxis, xaxis, 'budget', nbins=100, method='linear')
     print('bud', BUD)
 
     ax.imshow(BUD, extent=(nfmin, nfmax, zmin, zmax),
               aspect='auto', alpha=0.25, cmap='hsv')
 
     ZLIMITB, NDDF, ZVAR = getVals(
-        cosmo_res, 'zcomp_dd_unique', xaxis, var, nbins=100, method='linear')
+        cosmo_res, yaxis, xaxis, var, nbins=100, method='linear')
 
     # ax[1].imshow(NSN, extent=(nfmin, nfmax, zmin, zmax),
     #             aspect='auto', alpha=0.25, cmap='hsv')
@@ -963,8 +967,10 @@ print('loading', fName)
 cosmo_res = pd.read_hdf(cosmoName)
 
 cosmo_res = budget(cosmo_res)
+
 fig, ax = plt.subplots()
-plotContour_new(ax, cosmo_res)
+plotContour_new(ax, cosmo_res, var='nsn_DD', xaxis='nseasons_ultra_unique',
+                yaxis='zcomp_ultra_unique')
 plt.show()
 
 zfields = {}
