@@ -757,7 +757,8 @@ def plotContour(ax, zfields, fDir, fName,
     # axb = ax.twinx()
     # zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
     if runtype == 'deep_rolling':
-        zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
+        #zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
+        zzv = [2000, 3000, 4000, 5000, 6000]
     if runtype == 'universal':
         zzv = [4000, 5000, 6000, 8000, 10000, 14000]
     fmt = {}
@@ -789,7 +790,7 @@ def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_uniq
                           yaxis='zcomp_ultra_unique', Ny=20):
 
     fig, ax = plt.subplots(figsize=(10, 8))
-    fig.subplots_adjust(top=0.85)
+    fig.subplots_adjust(top=0.85, left=0.15)
 
     tt = 'Deep Rolling survey'
     # check the type of run in cosmo_res file
@@ -817,7 +818,8 @@ def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_uniq
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
     tot_tit += '\n  {}'.format(nvisitsy)
-    tot_tit += ' - {}'.format(leg)
+    if xaxis == 'nddf_dd':
+        tot_tit += ' - {}'.format(leg)
     fig.suptitle(tot_tit)
     plotContour_new(ax, cosmo_res, var=toplot, xaxis=xaxis, yaxis=yaxis)
 
@@ -828,10 +830,10 @@ def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_uniq
         ax.set_xlabel('N$_{\mathrm{seasons}}$ per ultra-deep field')
 
     if yaxis == 'zcomp_dd_unique':
-        ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{DD}}$')
+        ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{deep}}$')
 
     if yaxis == 'zcomp_ultra_unique':
-        ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{UD}}$')
+        ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{ultra-deep}}$')
 
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.show()
@@ -972,7 +974,9 @@ def plotContour_new(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis=
     # axb = ax.twinx()
     # zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
     if runtype == 'deep_rolling':
-        zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
+        #zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
+        zzv = [2000, 3000, 4000, 5000, 6000]
+
     if runtype == 'universal':
         zzv = [4000, 5000, 6000, 8000, 10000, 14000]
     fmt = {}
@@ -1058,16 +1062,19 @@ xaxis = opts.xaxis
 yaxis = opts.yaxis
 var_to_plot = opts.var_to_plot
 
+# load cosmo results
+cosmoName = '{}/{}.hdf5'.format(opts.cosmoDir, opts.cosmoFile)
+cosmo_res = pd.read_hdf(cosmoName)
+
+# get the max number of y-visits@z=0.9
+Ny = '{}'.format(int(np.median(cosmo_res['Ny'])))
+
 fName = 'Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny_{}.npy'.format(
     Ny)
 
 # budget class instance
 budget = DD_Budget(visitsDir, fName)
 
-# load cosmo results
-cosmoName = '{}/{}.hdf5'.format(opts.cosmoDir, opts.cosmoFile)
-print('loading', fName)
-cosmo_res = pd.read_hdf(cosmoName)
 
 # add budget colmuns
 cosmo_res = budget(cosmo_res)
