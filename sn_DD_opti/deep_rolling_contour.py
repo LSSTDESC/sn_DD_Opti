@@ -1079,7 +1079,8 @@ budget = DD_Budget(visitsDir, fName)
 # add budget colmuns
 cosmo_res = budget(cosmo_res)
 
-plotContourBudget_new(cosmo_res, toplot=var_to_plot, xaxis=xaxis, yaxis=yaxis)
+plotContourBudget_new(cosmo_res, toplot=var_to_plot,
+                      xaxis=xaxis, yaxis=yaxis, Ny=opts.Ny)
 
 
 zfields = {}
