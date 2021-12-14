@@ -580,7 +580,7 @@ class DDF_Scenario:
 
         """
 
-        fig, ax = plt.subplots(figsize=(14, 8))
+        fig, ax = plt.subplots(figsize=(15, 12))
 
         if varx == 'zlim':
             xvals = np.arange(0.5, 0.951, 0.01)
@@ -789,7 +789,7 @@ def plotContour(ax, zfields, fDir, fName,
 def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
                           yaxis='zcomp_ultra_unique', Ny=20):
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(12, 12))
     fig.subplots_adjust(top=0.85, left=0.15)
 
     tt = 'Deep Rolling survey'
@@ -801,10 +801,13 @@ def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_uniq
     idx = cosmo_res['nddf_dd'] >= 1
     cosmo_res = cosmo_res[idx]
 
+    print('hello here', nddf_ultra)
     if nddf_ultra < 1:
         tt = 'Deep Universal survey'
+        runtype = 'universal'
     else:
         # at least two DD ultra fields required
+        runtype = 'deep_rolling'
         idx = cosmo_res['nddf_ultra'] >= 2
         cosmo_res = cosmo_res[idx]
         ddf_ultra = np.unique(cosmo_res['ddf_ultra'])[0]
@@ -818,10 +821,11 @@ def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_uniq
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
     tot_tit += '\n  {}'.format(nvisitsy)
-    if xaxis == 'nddf_dd':
+    if xaxis == 'nddf_dd' and 'Universal' not in tt:
         tot_tit += ' - {}'.format(leg)
     fig.suptitle(tot_tit)
-    plotContour_new(ax, cosmo_res, var=toplot, xaxis=xaxis, yaxis=yaxis)
+    plotContour_new(ax, cosmo_res, var=toplot,
+                    runtype=runtype, xaxis=xaxis, yaxis=yaxis)
 
     if xaxis == 'nddf_dd':
         ax.set_xlabel(
@@ -975,7 +979,7 @@ def plotContour_new(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis=
     # zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
     if runtype == 'deep_rolling':
         #zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
-        zzv = [2000, 3000, 4000, 5000, 6000]
+        zzv = [2000, 2500., 3000, 3500, 4000, 4500., 5000, 6000]
 
     if runtype == 'universal':
         zzv = [4000, 5000, 6000, 8000, 10000, 14000]
