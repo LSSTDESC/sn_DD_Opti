@@ -1,4 +1,4 @@
-from .version import __version__
+from version import __version__
 import matplotlib.pyplot as plt
 
 filtercolors = dict(zip('ugrizy', ['b', 'c', 'g', 'y', 'r', 'm']))
@@ -8,7 +8,7 @@ plt.rcParams['axes.labelsize'] = 25
 plt.rcParams['font.size'] = 25
 plt.rcParams['figure.titlesize'] = 25
 plt.rcParams['legend.fontsize'] = 25
-
+plt.rcParams['lines.linewidth'] = 3
 #plt.rcParams['font.family'] = 'Liberation Serif'
 plt.rcParams['font.family'] = 'Arial'
 #plt.rcParams['font.family'] = 'Verdana'

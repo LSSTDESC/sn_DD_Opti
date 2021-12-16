@@ -1,15 +1,14 @@
-from scipy.interpolate import interp1d, griddata
-import numpy.lib.recfunctions as rf
-import copy
-from sn_rate import SN_Rate
-import matplotlib.pyplot as plt
+from scipy.interpolate import griddata
+#import matplotlib.pyplot as plt
+from __init__ import plt
 from optparse import OptionParser
 import numpy as np
-from scipy.ndimage import zoom
+#from scipy.ndimage import zoom
 from scipy.ndimage.filters import gaussian_filter
 from matplotlib.ticker import MaxNLocator
 import pandas as pd
-
+from wrapper import DD_Budget
+"""
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
 plt.rcParams['axes.labelsize'] = 25
@@ -18,186 +17,10 @@ plt.rcParams['legend.fontsize'] = 25
 plt.rcParams['lines.linewidth'] = 3
 # plt.rcParams['font.weight'] = 'bold'
 plt.rcParams['font.family'] = 'Arial'
+"""
 
 
-class DD_Budget:
-    """
-    class to estimate the DD budget for a survey configuration
-
-    Parameters
-    ---------------
-    fDir: str
-      location dir of (nvisits, zlim) file
-    fName: str
-      (nvisits, zlim) filename
-    cadence: int, opt
-      cadence of observation (default: 1 day)
-    Nvisits_nonDD: int,opt
-      total number of non-DD visits (default: 2122176)
-    slDir: str, opt
-      location dir of (seasonlength vs nvisits) file (default: input)
-    slName: str, opt
-      (seasonlength vs nvisits) (default: seasonlength_nvisits.py)
-    """
-
-    def __init__(self, fDir, fName,
-                 cadence=1, Nvisits_nonDD=2122176,
-                 slDir='input', slName='seasonlength_nvisits.npy'):
-
-        self.cadence = cadence
-        self.Nvisits_nonDD = Nvisits_nonDD
-        self.zlim_visit, self.visit_zlim = self.load(fDir, fName)
-
-        self.nvisits_seasonlength = self.load_seasonlength_nvisits(
-            slDir, slName)
-
-    def load(self, fDir, fName):
-        """
-        Method to load a file fDir/fName
-
-        Parameters
-        --------------
-        fDir: str
-          location dir of the file
-        fName: str
-          file name
-
-        Returns
-        -----------
-        dict of interp1d
-          key: cadence
-          values: interp1d(nvisits, z)
-
-        """
-
-        from wrapper import Mod_z
-        # tab = np.load(fName, allow_pickle=True)
-        tab = Mod_z('{}/{}'.format(fDir, fName)).nvisits
-        res = {}
-        resb = {}
-        print(tab)
-        for cad in np.unique(tab['cadence']):
-            idx = tab['cadence'] == cad
-            sel = tab[idx]
-            res[cad] = interp1d(sel['Nvisits'], sel['z'],
-                                bounds_error=False, fill_value=0.)
-            resb[cad] = interp1d(sel['z'], sel['Nvisits'],
-                                 bounds_error=False, fill_value=0.)
-        return res, resb
-
-    def load_seasonlength_nvisits(self, slDir, slName):
-        """
-        Method to load (seasonlength, nvisits) file and make interp1d out of it
-
-        Parameters
-        ---------------
-        slDir: str
-          location dir of (seasonlength vs nvisits) file
-        slName: str
-          (seasonlength vs nvisits)
-
-        Returns
-        -----------
-        dict of interp1d(nvisits, seasonlength); key: field name
-        """
-
-        tab = np.load('{}/{}'.format(slDir, slName), allow_pickle=True)
-
-        res = {}
-        self.DD_list = np.unique(tab['name']).tolist()
-
-        for fieldName in np.unique(tab['name']):
-            idx = tab['name'] == fieldName
-            sel = tab[idx]
-            res[fieldName] = interp1d(sel['nvisits'], sel['season_length'],
-                                      bounds_error=False, fill_value=0.)
-        return res
-
-    def __call__(self, cosmodf):
-
-        print(cosmodf.columns)
-        cosmodf['budget'] = cosmodf.apply(
-            lambda x: self.budget(x), axis=1)
-
-        cosmodf['zcomp_dd_unique'] = cosmodf.apply(
-            lambda x: np.mean(x['zcomp_dd']), axis=1)
-        cosmodf['zcomp_ultra_unique'] = cosmodf.apply(
-            lambda x: np.mean(x['zcomp_ultra']), axis=1)
-        cosmodf['nseasons_ultra_unique'] = cosmodf.apply(
-            lambda x: np.mean(x['nseasons_ultra']), axis=1)
-        cosmodf['nseasons_dd_unique'] = cosmodf.apply(
-            lambda x: np.mean(x['nseasons_dd']), axis=1)
-        cosmodf['nddf_ultra'] = cosmodf.apply(
-            lambda x:  len(x['ddf_ultra']), axis=1)
-        cosmodf['nddf_dd'] = cosmodf.apply(
-            lambda x:  len(x['ddf_dd']), axis=1)
-        cosmodf['nddf'] = cosmodf['nddf_ultra']+cosmodf['nddf_dd']
-
-        print('finally', cosmodf)
-
-        return cosmodf
-
-    def budget(self, grp):
-        """
-        Method to estimate the budget corresponding to a survey summarized in grp
-
-        Parameters
-        ---------------
-        grp: pandas group
-          with infos related to the survey
-        """
-        print('hello', grp)
-        Nvisits_tot = 0
-        Nvisits_tot += self.Nvisits_field(grp, 'ultra')
-        Nvisits_tot += self.Nvisits_field(grp, 'dd')
-
-        budget = Nvisits_tot/(Nvisits_tot+self.Nvisits_nonDD)
-
-        # return pd.DataFrame({'budget': [budget]})
-        return budget
-
-    def Nvisits_field(self, grp, suffix='ultra'):
-
-        Nvisits_tot = 0
-        ddf = grp['ddf_{}'.format(suffix)]
-        zcomp = grp['zcomp_{}'.format(suffix)]
-        nseasons = grp['nseasons_{}'.format(suffix)]
-        nddf = len(ddf)
-        print('helli', ddf, zcomp)
-        for i in range(nddf):
-            # get the number of visits per night corresponding to zcomp
-            nvisits_night = self.visit_zlim[self.cadence](zcomp[i])
-            season_length = self.nvisits_seasonlength[ddf[i]](
-                nvisits_night)
-            season_length = np.min([season_length, 180.])
-            Nvisits_all_seas = self.Nvisits_seasons(
-                nvisits_night, season_length, nseasons[i])
-            print(ddf[i], zcomp[i],
-                  nseasons[i], nvisits_night, season_length, Nvisits_all_seas)
-            Nvisits_tot += Nvisits_all_seas
-
-        return Nvisits_tot
-
-    def Nvisits_seasons(self, nvisits_night, season_length, nseasons):
-        """
-        Total number of visits over a season
-
-        Parameters
-        ---------------
-        nvisits_night: int
-          number of visits per obs night
-        season_length: float
-          season length (in days)
-        nseasons: int
-          number of seasons of obs.
-        """
-
-        N_nights = nseasons*season_length/self.cadence
-
-        return N_nights*nvisits_night
-
-
-class DDF_Scenario:
+class DDF_Scenario_deprecated:
     """
     class to estimate the DD budget for a set of scenarios
 
@@ -618,11 +441,11 @@ class DDF_Scenario:
         ax.legend()
 
 
-def plotContourBudget(zfields, fDir,
-                      slDir='input', slName='seasonlength_nvisits.npy',
-                      nseasons=2, season_length=6., cadence=1.,
-                      nDD_max=4, Ny=20, cosmo_res=pd.DataFrame(),
-                      toplot='sigma_w', xaxis='nddf'):
+def plotContourBudget_deprecated(zfields, fDir,
+                                 slDir='input', slName='seasonlength_nvisits.npy',
+                                 nseasons=2, season_length=6., cadence=1.,
+                                 nDD_max=4, Ny=20, cosmo_res=pd.DataFrame(),
+                                 toplot='sigma_w', xaxis='nddf'):
 
     # fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
     tt = 'Deep Rolling survey'
@@ -670,10 +493,10 @@ def plotContourBudget(zfields, fDir,
     plt.show()
 
 
-def plotContour(ax, zfields, fDir, fName,
-                slDir='input', slName='seasonlength_nvisits.npy', color='k',
-                nseasons=2, season_length=6., cadence=1., nDD_max=4,
-                cosmo_res=pd.DataFrame(), var='nsn_DD', runtype='deep_rolling', xaxis='nddf'):
+def plotContour_deprecated(ax, zfields, fDir, fName,
+                           slDir='input', slName='seasonlength_nvisits.npy', color='k',
+                           nseasons=2, season_length=6., cadence=1., nDD_max=4,
+                           cosmo_res=pd.DataFrame(), var='nsn_DD', runtype='deep_rolling', xaxis='nddf'):
     """
     Method to get results from the DDF_Scenario class
 
@@ -786,8 +609,8 @@ def plotContour(ax, zfields, fDir, fName,
     ax.set_ylim([zmin, zmax])
 
 
-def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
-                          yaxis='zcomp_ultra_unique', Ny=20):
+def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
+                      yaxis='zcomp_ultra_unique', Ny=20):
 
     fig, ax = plt.subplots(figsize=(12, 12))
     fig.subplots_adjust(top=0.85, left=0.15)
@@ -824,8 +647,8 @@ def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_uniq
     if xaxis == 'nddf_dd' and 'Universal' not in tt:
         tot_tit += ' - {}'.format(leg)
     fig.suptitle(tot_tit)
-    plotContour_new(ax, cosmo_res, var=toplot,
-                    runtype=runtype, xaxis=xaxis, yaxis=yaxis)
+    plotContour(ax, cosmo_res, var=toplot,
+                runtype=runtype, xaxis=xaxis, yaxis=yaxis)
 
     if xaxis == 'nddf_dd':
         ax.set_xlabel(
@@ -888,7 +711,7 @@ def plotContourBudget_new(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_uniq
     plt.show()
 
 
-def plotContour_new(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='nddf_dd', yaxis='zcomp_ultra_unique'):
+def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='nddf_dd', yaxis='zcomp_ultra_unique'):
     """
     Method to get results from the DDF_Scenario class
 
@@ -1025,24 +848,30 @@ def getVals(res, varx='zcomp', vary='sigma_w', varz='nddf', nbins=800, method='l
 
 parser = OptionParser()
 
+"""
 parser.add_option('--ultraDeep', type=str, default='COSMOS,XMM-LSS',
                   help='list of ultra deep fields[%default]')
 parser.add_option('--z_ultra', type=str, default='0.9,0.9',
                   help='z complete of ultra deep fields[%default]')
 parser.add_option('--nseason_ultra', type=str, default='2,2',
                   help='number of visits for ultra deep fields[%default]')
+"""
 parser.add_option("--visitsDir", type=str, default='visits_files',
                   help="directory where visits files are located[%default]")
 parser.add_option("--cosmoDir", type=str, default='cosmo_files',
                   help="directory where cosmo files are located[%default]")
+"""
 parser.add_option('--nseasons', type=int, default=2,
                   help='number of seasons (not ultra_deep fields)[%default]')
 parser.add_option('--season_length', type=float, default=6.,
                   help='season length (not ultra_deep fields)[%default]')
+"""
 parser.add_option('--cadence', type=float, default=1.,
                   help='cadence of observation[%default]')
+"""
 parser.add_option('--nDD_max', type=int, default=4,
                   help='max number of DD fields[%default]')
+"""
 parser.add_option('--Ny', type=int, default=20,
                   help='max number of y-band visits [%default]')
 parser.add_option('--var_to_plot', type='str', default='sigma_w',
@@ -1056,9 +885,11 @@ parser.add_option('--cosmoFile', type='str', default='cosmoSN_deep_rolling_0.80_
 
 opts, args = parser.parse_args()
 
+"""
 ultraDeepFields = opts.ultraDeep.split(',')
 z_ultra = list(map(float, opts.z_ultra.split(',')))
 nseasons_ultra = list(map(int, opts.nseason_ultra.split(',')))
+"""
 xaxis = opts.xaxis
 visitsDir = opts.visitsDir
 Ny = opts.Ny
@@ -1083,10 +914,10 @@ budget = DD_Budget(visitsDir, fName)
 # add budget colmuns
 cosmo_res = budget(cosmo_res)
 
-plotContourBudget_new(cosmo_res, toplot=var_to_plot,
-                      xaxis=xaxis, yaxis=yaxis, Ny=opts.Ny)
+plotContourBudget(cosmo_res, toplot=var_to_plot,
+                  xaxis=xaxis, yaxis=yaxis, Ny=opts.Ny)
 
-
+"""
 zfields = {}
 
 if ultraDeepFields != ['None']:
@@ -1124,3 +955,4 @@ plotContourBudget(zfields, opts.visitsDir,
                   season_length=opts.season_length,
                   cadence=opts.cadence, nDD_max=opts.nDD_max,
                   Ny=opts.Ny, cosmo_res=cosmo_res, toplot=opts.var_to_plot, xaxis=xaxis)
+"""
