@@ -1,9 +1,9 @@
 from scipy.interpolate import griddata
-#import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from __init__ import plt
 from optparse import OptionParser
 import numpy as np
-#from scipy.ndimage import zoom
+# from scipy.ndimage import zoom
 from scipy.ndimage.filters import gaussian_filter
 from matplotlib.ticker import MaxNLocator
 import pandas as pd
@@ -580,7 +580,7 @@ def plotContour_deprecated(ax, zfields, fDir, fName,
     # axb = ax.twinx()
     # zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
     if runtype == 'deep_rolling':
-        #zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
+        # zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
         zzv = [2000, 3000, 4000, 5000, 6000]
     if runtype == 'universal':
         zzv = [4000, 5000, 6000, 8000, 10000, 14000]
@@ -619,6 +619,7 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     # check the type of run in cosmo_res file
     nddf_ultra = np.mean(cosmo_res['nddf_ultra'])
     leg = ''
+    legb = ''
     print(cosmo_res.columns)
     # at least one dd field requested
     idx = cosmo_res['nddf_dd'] >= 1
@@ -636,16 +637,37 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
         ddf_ultra = np.unique(cosmo_res['ddf_ultra'])[0]
         seasons_ultra = np.unique(cosmo_res['nseasons_ultra'])[0]
         zcomp_ultra = np.unique(cosmo_res['zcomp_ultra'])[0]
+        ddf_dd = np.unique(cosmo_res['ddf_dd'])[0]
+        seasons_dd = np.unique(cosmo_res['nseasons_dd'])[0]
+        zcomp_dd = np.unique(cosmo_res['zcomp_dd'])[0]
+        print('aoooooooo', ddf_dd, 'jj', np.unique(cosmo_res['ddf_dd']))
+        ddf_dd_new = {}
+        for ii, vv in enumerate(ddf_dd):
+            if vv not in ddf_dd_new.keys():
+                ddf_dd_new[vv] = {}
+                ddf_dd_new[vv]['nseasons'] = []
+                ddf_dd_new[vv]['zcomp'] = []
+
+            ddf_dd_new[vv]['nseasons'].append(seasons_dd[ii])
+            ddf_dd_new[vv]['zcomp'].append(zcomp_dd[ii])
+
         if len(ddf_ultra) == len(seasons_ultra):
             for i in range(len(ddf_ultra)):
                 leg += ddf_ultra[i] + \
                     '$_{'+str(seasons_ultra[i])+'}^{'+str(zcomp_ultra[i])+'}$'
+        for key, vals in ddf_dd_new.items():
+            legb += key + \
+                '$_{'+str(np.sum(vals['nseasons'])) + \
+                '}^{'+str(np.median(vals['zcomp']))+'}$'
+
     nseasons_dd = np.unique(cosmo_res['nseasons_dd_unique'].astype(int))[0]
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
     tot_tit += '\n  {}'.format(nvisitsy)
     if xaxis == 'nddf_dd' and 'Universal' not in tt:
         tot_tit += ' - {}'.format(leg)
+    else:
+        tot_tit += ' - {}'.format(legb)
     fig.suptitle(tot_tit)
     plotContour(ax, cosmo_res, var=toplot,
                 runtype=runtype, xaxis=xaxis, yaxis=yaxis)
@@ -801,7 +823,7 @@ def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='ndd
     # axb = ax.twinx()
     # zzv = [1000, 1200, 1500, 1700, 2000, 2500, 3000, 4000, 5000, 6000]
     if runtype == 'deep_rolling':
-        #zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
+        # zzv = [1000, 1500, 2000, 2500, 3000, 3500, 4200, 4500, 5000, 6000]
         zzv = [2000, 2500., 3000, 3500, 4000, 4500., 5000, 6000]
 
     if runtype == 'universal':
