@@ -128,10 +128,8 @@ parser.add_option("--cosmoDir", type=str, default='cosmo_files',
                   help="directory where cosmo files are located[%default]")
 parser.add_option('--cadence', type=float, default=1.,
                   help='cadence of observation[%default]')
-parser.add_option('--cosmoFiles', type='str', default='cosmoSN_deep_rolling_2_2_mini_yearly_Ny_40,cosmoSN_deep_rolling_2_2_mini_0.65_yearly_Ny_40,cosmoSN_deep_rolling_2_2_mini_0.60_yearly_Ny_40,cosmoSN_deep_rolling_0.80_0.80_yearly_Ny_40,cosmoSN_universal_yearly_Ny_40',
-                  help='cosmo files to process[%default]')
-parser.add_option('--nickNames', type='str', default='deep_rolling_early,deep_rolling_early_0.65,deep_rolling_early_0.60,deep_rolling_ten_years,universal',
-                  help='nicknames corresponding to cosmofiles to process[%default]')
+parser.add_option('--config', type='str', default='config_survey_time.csv',
+                  help='configuration file [%default]')
 parser.add_option('--prefix_Nvisits', type='str', default='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny',
                   help='prefix for Nvisits file[%default]')
 
@@ -140,12 +138,13 @@ opts, args = parser.parse_args()
 cosmoDir = opts.cosmoDir
 visitsDir = opts.visitsDir
 cadence = opts.cadence
-cosmoFiles = opts.cosmoFiles.split(',')
-nickNames = opts.nickNames.split(',')
 prefix_Nvisits = opts.prefix_Nvisits
+
+conf = pd.read_csv(opts.config, comment='#')
 
 df = {}
 
+"""
 for i in range(len(cosmoFiles)):
     fi = '{}/{}.hdf5'.format(cosmoDir, cosmoFiles[i])
     nName = nickNames[i]
@@ -154,6 +153,16 @@ for i in range(len(cosmoFiles)):
         df['universal_0.65'] = load_b(fi, zcomp=0.65)
     else:
         df[nName] = load(fi)
+"""
+for index, row in conf.iterrows():
+    fi = '{}/{}.hdf5'.format(cosmoDir, row['cosmoFile'])
+    nName = row['name']
+    if 'universal' in nName:
+        # df['universal_0.60'] = load_b(fi, zcomp=0.60)
+        df[nName] = load_b(fi, zcomp=0.65)
+    else:
+        df[nName] = load(fi)
+
 
 # estimate Budget for all of these
 # budget class instance
