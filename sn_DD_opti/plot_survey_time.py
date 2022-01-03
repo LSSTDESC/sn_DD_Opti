@@ -3,16 +3,33 @@ from __init__ import plt
 import numpy as np
 from optparse import OptionParser
 from wrapper import DD_Budget
+from scipy.interpolate import interp1d
 
 
-def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$'):
+def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[]):
 
+    vva = ['deep_rolling_early', 'deep_rolling_ten_years', 'universal']
+    vvp = ['Early Deep Rolling',
+           'Deep Rolling 10 years', 'Deep Universal']
+    colors = ['red', 'blue', 'magenta']
+    corresp = dict(zip(vva, vvp))
+    ccolors = dict(zip(vva, colors))
     fig, ax = plt.subplots(figsize=(15, 8))
     lls = ['solid', 'dashed', 'dotted', 'dotted', 'solid', 'dashed', ]
     keys = list(df.keys())
     ls = dict(zip(keys, lls[:len(keys)]))
     for key, vals in df.items():
-        ax.plot(vals[xvar], vals[yvar], marker='o', label=key, ls=ls[key])
+        ax.plot(vals[xvar], vals[yvar], marker='o',
+                label=corresp[key], ls=ls[key], ms=5, color=ccolors[key])
+        if len(tag_budget) > 0:
+            interp_bud = interp1d(
+                vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
+            interp_var = interp1d(
+                vals[xvar], vals[yvar], bounds_error=False, fill_value=0.)
+        for i, val in enumerate(tag_budget):
+            ttime = interp_bud(val)
+            ax.plot(ttime, interp_var(ttime),
+                    marker=tag_marker[i], color='k', ms=15., mfc='None', markeredgewidth=2)
 
     if yvartwin != '':
         axb = ax.twinx()
@@ -22,6 +39,8 @@ def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigm
 
     if xvar == 'year':
         ax.set_xlim([0.9, 10.1])
+    if yvar == 'sigma_w':
+        ax.set_ylim([0.005, None])
     ax.grid()
     ax.legend()
     ax.set_xlabel(legx)
@@ -68,6 +87,21 @@ def plot_multiple(df, xvar='year', yvar='sigma_w', yvartwin=''):
             ax[ipos, jpos].set_xlabel('Year')
 
     fig.tight_layout()
+
+
+def plot_diff(df, ref=['deep_rolling_early', 'deep_rolling_ten_years', 'universal'], xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$'):
+
+    fig, ax = plt.subplots(figsize=(15, 8))
+
+    for refval in ref:
+        df_ref = df[refval]
+        for key, vals in df.items():
+            if refval in key and refval != key:
+                print('boo', refval, key)
+                ax.plot(df_ref[xvar], df_ref[yvar]-vals[yvar], label=key)
+
+    ax.legend()
+    ax.grid()
 
 
 def load(fi):
@@ -175,8 +209,16 @@ for key, vals in df.items():
     df[key] = cosmo_bud
 
 # plot_multiple(df, yvartwin='budget')
-plot(df)
-plot(df, yvar='budget')
+#plot(df, yvar='w', legy='w')
+#plot(df, yvar='Om', legy='Om')
+plot(df, yvar='sigma_w', legy='$\sigma_w$', tag_budget=[
+     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+# plot(df, yvar='sigma_Om', legy='$\sigma_{\Omega_m}$', tag_budget=[
+#     0.05, 0.07, 0.09], tag_marker=['*', '^', 'v'])
+#plot(df, yvar='budget', legy='budget')
+# plot_diff(df)
+#plot_diff(df, yvar='w')
+#plot(df, yvar='budget', legy='budget')
 # plot(df, xvar='nsn_z_09')
 # plot(df, yvar='budget')
 plt.subplots_adjust(hspace=0, wspace=0)
