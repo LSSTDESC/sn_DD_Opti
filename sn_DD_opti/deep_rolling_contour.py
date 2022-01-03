@@ -615,7 +615,8 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     fig, ax = plt.subplots(figsize=(12, 12))
     fig.subplots_adjust(top=0.85, left=0.15)
 
-    tt = 'Deep Rolling survey'
+    tt = 'Deep Rolling 10 Years survey'
+    plotName = '{}_deep_rolling_all.png'.format(toplot)
     # check the type of run in cosmo_res file
     nddf_ultra = np.mean(cosmo_res['nddf_ultra'])
     leg = ''
@@ -629,8 +630,11 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     if nddf_ultra < 1:
         tt = 'Deep Universal survey'
         runtype = 'universal'
+        plotName = '{}_deep_universal.png'.format(toplot)
     else:
         # at least two DD ultra fields required
+        if xaxis == 'nseasons_ultra_unique':
+            tt = 'Early Deep Rolling survey'
         runtype = 'deep_rolling'
         idx = cosmo_res['nddf_ultra'] >= 2
         cosmo_res = cosmo_res[idx]
@@ -640,6 +644,9 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
         ddf_dd = np.unique(cosmo_res['ddf_dd'])[0]
         seasons_dd = np.unique(cosmo_res['nseasons_dd'])[0]
         zcomp_dd = np.unique(cosmo_res['zcomp_dd'])[0]
+        if xaxis == 'nseasons_ultra_unique':
+            plotName = '{}_deep_rolling_early_{}.png'.format(
+                toplot, str(np.mean(zcomp_dd)).replace('.', ''))
         print('aoooooooo', ddf_dd, 'jj', np.unique(cosmo_res['ddf_dd']))
         ddf_dd_new = {}
         for ii, vv in enumerate(ddf_dd):
@@ -664,10 +671,12 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
     tot_tit += '\n  {}'.format(nvisitsy)
-    if xaxis == 'nddf_dd' and 'Universal' not in tt:
+    print('alors', xaxis, tt, tt.count('Universal'))
+    if xaxis == 'nddf_dd' and tt.count('Universal') == 0:
         tot_tit += ' - {}'.format(leg)
     else:
-        tot_tit += ' - {}'.format(legb)
+        if tt.count('Universal') == 0:
+            tot_tit += ' - {}'.format(legb)
     fig.suptitle(tot_tit)
     plotContour(ax, cosmo_res, var=toplot,
                 runtype=runtype, xaxis=xaxis, yaxis=yaxis)
@@ -685,7 +694,9 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
         ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{ultra-deep}}$')
 
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    plt.savefig(plotName, dpi=fig.dpi)
     plt.show()
+
     return None
     # fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
 
