@@ -196,6 +196,7 @@ for index, row in conf.iterrows():
         df[nName] = load_b(fi, zcomp=0.65)
     else:
         df[nName] = load(fi)
+    print(df[nName].columns)
 
 
 # estimate Budget for all of these
@@ -207,12 +208,21 @@ for key, vals in df.items():
     # add budget colmuns
     cosmo_bud = budget(vals)
     df[key] = cosmo_bud
+    df[key]['frac_high_z'] = df[key]['nsn_z_09']/df[key]['nsn_DD']
 
 # plot_multiple(df, yvartwin='budget')
 #plot(df, yvar='w', legy='w')
 #plot(df, yvar='Om', legy='Om')
 plot(df, yvar='sigma_w', legy='$\sigma_w$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+plot(df, xvar='nsn_z_09', legx='$N_{SN}^{z\geq 0.9}$', tag_budget=[
+     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
+     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+plot(df, xvar='frac_high_z', legx='$frac$', tag_budget=[
+     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+
+
 # plot(df, yvar='sigma_Om', legy='$\sigma_{\Omega_m}$', tag_budget=[
 #     0.05, 0.07, 0.09], tag_marker=['*', '^', 'v'])
 #plot(df, yvar='budget', legy='budget')

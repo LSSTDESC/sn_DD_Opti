@@ -403,7 +403,7 @@ class DDF_Scenario_deprecated:
 
         """
 
-        fig, ax = plt.subplots(figsize=(15, 12))
+        fig, ax = plt.subplots(figsize=(18, 10))
 
         if varx == 'zlim':
             xvals = np.arange(0.5, 0.951, 0.01)
@@ -424,7 +424,7 @@ class DDF_Scenario_deprecated:
 
     def plot_seasonlength_nvisits(self, tab):
 
-        fig, ax = plt.subplots(figsize=(12, 8))
+        fig, ax = plt.subplots(figsize=(15, 8))
         nvisits = np.arange(10, 500, 10)
 
         for key, vals in tab.items():
@@ -612,7 +612,7 @@ def plotContour_deprecated(ax, zfields, fDir, fName,
 def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
                       yaxis='zcomp_ultra_unique', Ny=20):
 
-    fig, ax = plt.subplots(figsize=(12, 12))
+    fig, ax = plt.subplots(figsize=(15, 10))
     fig.subplots_adjust(top=0.85, left=0.15)
 
     tt = 'Deep Rolling 10 Years survey'
@@ -695,7 +695,7 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
 
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     plt.savefig(plotName, dpi=fig.dpi)
-    plt.show()
+    # plt.show()
 
     return None
     # fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
