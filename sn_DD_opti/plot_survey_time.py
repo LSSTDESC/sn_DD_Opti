@@ -198,7 +198,6 @@ for index, row in conf.iterrows():
         df[nName] = load(fi)
     print(df[nName].columns)
 
-
 # estimate Budget for all of these
 # budget class instance
 for key, vals in df.items():
@@ -209,6 +208,7 @@ for key, vals in df.items():
     cosmo_bud = budget(vals)
     df[key] = cosmo_bud
     df[key]['frac_high_z'] = df[key]['nsn_z_09']/df[key]['nsn_DD']
+    df[key]['nsn_ultra'] = df[key]['nsn_DD_COSMOS']+df[key]['nsn_DD_XMM-LSS']
 
 # plot_multiple(df, yvartwin='budget')
 #plot(df, yvar='w', legy='w')
@@ -219,7 +219,7 @@ plot(df, xvar='nsn_z_09', legx='$N_{SN}^{z\geq 0.9}$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
 plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
-plot(df, xvar='frac_high_z', legx='$frac$', tag_budget=[
+plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra}$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
 
 
