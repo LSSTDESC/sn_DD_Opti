@@ -47,6 +47,59 @@ def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigm
     ax.set_ylabel(legy)
 
 
+def plot_syste(df, df_syste, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[]):
+
+    vva = ['deep_rolling_early', 'deep_rolling_ten_years', 'universal']
+    vvp = ['Early Deep Rolling',
+           'Deep Rolling 10 years', 'Deep Universal']
+    colors = ['red', 'blue', 'magenta']
+    corresp = dict(zip(vva, vvp))
+    ccolors = dict(zip(vva, colors))
+    fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 8))
+    lls = ['solid', 'dashed', 'dotted', 'dotted', 'solid', 'dashed', ]
+    keys = list(df.keys())
+    ls = dict(zip(keys, lls[:len(keys)]))
+    for key, vals in df.items():
+        # ax.plot(vals[xvar], vals[yvar], marker='o',
+        #        label=corresp[key], ls=ls[key], ms=5, color=ccolors[key])
+        # get systematic (if exist)
+        key_syste = []
+        for keyb in df_syste.keys():
+            if key in keyb:
+                key_syste.append(keyb)
+
+        for io, keysyst in enumerate(key_syste):
+            dfsyst = df_syste[keysyst]
+            dfsyst['year'] = dfsyst['year'].astype(int)
+            vals['year'] = vals['year'].astype(int)
+
+            dfb = vals.merge(dfsyst, left_on=[xvar], right_on=[xvar])
+            dfb['diff'] = dfb['{}_x'.format(
+                yvar)]-dfb['{}_y'.format(yvar)]
+            ax[io].plot(dfb[xvar], dfb['diff'], marker='o',
+                        ls=ls[key], ms=5, color=ccolors[key], label=corresp[key])
+
+            if len(tag_budget) > 0:
+                interp_bud = interp1d(
+                    vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
+                interp_var = interp1d(
+                    dfb[xvar], dfb['diff'], bounds_error=False, fill_value=0.)
+            for i, val in enumerate(tag_budget):
+                ttime = interp_bud(val)
+                ax[io].plot(ttime, interp_var(ttime),
+                            marker=tag_marker[i], color='k', ms=15., mfc='None', markeredgewidth=2)
+
+            if xvar == 'year':
+                ax[io].set_xlim([0.9, 10.1])
+                # if yvar == 'sigma_w':
+                #    ax.set_ylim([0.005, None])
+            ax[io].grid()
+            if io == 0:
+                ax[io].legend()
+            ax[io].set_xlabel(legx)
+            ax[io].set_ylabel(legy)
+
+
 def plot_multiple(df, xvar='year', yvar='sigma_w', yvartwin=''):
 
     nplots = len(df.keys())
@@ -177,6 +230,7 @@ prefix_Nvisits = opts.prefix_Nvisits
 conf = pd.read_csv(opts.config, comment='#')
 
 df = {}
+df_syste = {}
 
 """
 for i in range(len(cosmoFiles)):
@@ -191,12 +245,17 @@ for i in range(len(cosmoFiles)):
 for index, row in conf.iterrows():
     fi = '{}/{}.hdf5'.format(cosmoDir, row['cosmoFile'])
     nName = row['name']
+    ttype = row['type']
     if 'universal' in nName:
         # df['universal_0.60'] = load_b(fi, zcomp=0.60)
-        df[nName] = load_b(fi, zcomp=0.65)
+        fload = load_b(fi, zcomp=0.65)
     else:
-        df[nName] = load(fi)
-    print(df[nName].columns)
+        fload = load(fi)
+    fload['sigma_w_rel'] = np.abs(fload['sigma_w']/fload['w'])
+    if ttype == 'nominal':
+        df[nName] = fload
+    else:
+        df_syste[nName] = fload
 
 
 # estimate Budget for all of these
@@ -211,24 +270,31 @@ for key, vals in df.items():
     df[key]['frac_high_z'] = df[key]['nsn_z_09']/df[key]['nsn_DD']
 
 # plot_multiple(df, yvartwin='budget')
-#plot(df, yvar='w', legy='w')
-#plot(df, yvar='Om', legy='Om')
+# plot(df, yvar='w', legy='w')
+# plot(df, yvar='Om', legy='Om')
 plot(df, yvar='sigma_w', legy='$\sigma_w$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+plot_syste(df, df_syste, yvar='sigma_w', tag_budget=[
+    0.05, 0.08, 0.10], legy='$\Delta\sigma_w$', tag_marker=['*', '^', 's'])
+"""
+plot_syste(df, df_syste, yvar='w',
+           legy='$w$', tag_marker=['*', '^', 's'])
+"""
+"""
 plot(df, xvar='nsn_z_09', legx='$N_{SN}^{z\geq 0.9}$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
 plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
 plot(df, xvar='frac_high_z', legx='$frac$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
-
+"""
 
 # plot(df, yvar='sigma_Om', legy='$\sigma_{\Omega_m}$', tag_budget=[
 #     0.05, 0.07, 0.09], tag_marker=['*', '^', 'v'])
-#plot(df, yvar='budget', legy='budget')
+# plot(df, yvar='budget', legy='budget')
 # plot_diff(df)
-#plot_diff(df, yvar='w')
-#plot(df, yvar='budget', legy='budget')
+# plot_diff(df, yvar='w')
+# plot(df, yvar='budget', legy='budget')
 # plot(df, xvar='nsn_z_09')
 # plot(df, yvar='budget')
 plt.subplots_adjust(hspace=0, wspace=0)
