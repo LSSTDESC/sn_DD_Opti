@@ -69,6 +69,7 @@ def plot_syste(df, df_syste, xvar='year', yvar='sigma_w', yvartwin='', legx='Yea
                 key_syste.append(keyb)
 
         for io, keysyst in enumerate(key_syste):
+
             dfsyst = df_syste[keysyst]
             dfsyst['year'] = dfsyst['year'].astype(int)
             vals['year'] = vals['year'].astype(int)
@@ -274,8 +275,12 @@ for key, vals in df.items():
 # plot(df, yvar='Om', legy='Om')
 plot(df, yvar='sigma_w', legy='$\sigma_w$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
+     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+
 plot_syste(df, df_syste, yvar='sigma_w', tag_budget=[
     0.05, 0.08, 0.10], legy='$\Delta\sigma_w$', tag_marker=['*', '^', 's'])
+
 """
 plot_syste(df, df_syste, yvar='w',
            legy='$w$', tag_marker=['*', '^', 's'])
