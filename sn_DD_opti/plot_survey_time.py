@@ -9,8 +9,8 @@ from scipy.interpolate import interp1d
 def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[]):
 
     vva = ['deep_rolling_early', 'deep_rolling_ten_years', 'universal']
-    vvp = ['Early Deep Rolling',
-           'Deep Rolling 10 years', 'Deep Universal']
+    vvp = ['Early Deep Rolling (EDR$^3$)',
+           'Deep Rolling 10 years (DR$^{10Y}$)', 'Deep Universal (DU$^{0.65}$)']
     colors = ['red', 'blue', 'magenta']
     corresp = dict(zip(vva, vvp))
     ccolors = dict(zip(vva, colors))
@@ -19,6 +19,7 @@ def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigm
     keys = list(df.keys())
     ls = dict(zip(keys, lls[:len(keys)]))
     for key, vals in df.items():
+        print('elelelele', vals.columns)
         ax.plot(vals[xvar], vals[yvar], marker='o',
                 label=corresp[key], ls=ls[key], ms=5, color=ccolors[key])
         if len(tag_budget) > 0:
@@ -26,10 +27,13 @@ def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigm
                 vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
             interp_var = interp1d(
                 vals[xvar], vals[yvar], bounds_error=False, fill_value=0.)
+        print('Survey', key)
         for i, val in enumerate(tag_budget):
             ttime = interp_bud(val)
-            ax.plot(ttime, interp_var(ttime),
+            valres = interp_var(ttime)
+            ax.plot(ttime, valres,
                     marker=tag_marker[i], color='k', ms=15., mfc='None', markeredgewidth=2)
+            print('resu budget', val, xvar, ttime, yvar, valres)
 
     if yvartwin != '':
         axb = ax.twinx()
@@ -47,11 +51,13 @@ def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigm
     ax.set_ylabel(legy)
 
 
-def plot_syste(df, df_syste, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[]):
+def plot_syste(df, df_syste, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[], norm=False):
 
     vva = ['deep_rolling_early', 'deep_rolling_ten_years', 'universal']
     vvp = ['Early Deep Rolling',
            'Deep Rolling 10 years', 'Deep Universal']
+    vvp = ['Early Deep Rolling (EDR$^3$)',
+           'Deep Rolling 10 years (DR$^{10Y}$)', 'Deep Universal (DU$^{0.65}$)']
     colors = ['red', 'blue', 'magenta']
     corresp = dict(zip(vva, vvp))
     ccolors = dict(zip(vva, colors))
@@ -75,28 +81,41 @@ def plot_syste(df, df_syste, xvar='year', yvar='sigma_w', yvartwin='', legx='Yea
             vals['year'] = vals['year'].astype(int)
 
             dfb = vals.merge(dfsyst, left_on=[xvar], right_on=[xvar])
-            dfb['diff'] = dfb['{}_x'.format(
-                yvar)]-dfb['{}_y'.format(yvar)]
+            varx = '{}_x'.format(yvar)
+            vary = '{}_y'.format(yvar)
+            #print('hello', dfb[[varx, vary]])
+            dfb['diff'] = dfb[varx]-dfb[vary]
+            if norm:
+                dfb['diff'] /= dfb['{}_x'.format(yvar)]
             ax[io].plot(dfb[xvar], dfb['diff'], marker='o',
                         ls=ls[key], ms=5, color=ccolors[key], label=corresp[key])
 
             if len(tag_budget) > 0:
                 interp_bud = interp1d(
                     vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
+                interp_varm = interp1d(
+                    vals[xvar], vals[yvar], bounds_error=False, fill_value=0.)
                 interp_var = interp1d(
                     dfb[xvar], dfb['diff'], bounds_error=False, fill_value=0.)
+
+            print('survey', key, keysyst)
             for i, val in enumerate(tag_budget):
                 ttime = interp_bud(val)
-                ax[io].plot(ttime, interp_var(ttime),
+                valres = interp_var(ttime)
+                valresm = interp_varm(ttime)
+                ax[io].plot(ttime, valres,
                             marker=tag_marker[i], color='k', ms=15., mfc='None', markeredgewidth=2)
-
+                print('resu budget', val, xvar,
+                      ttime, yvar, valres, valresm)
             if xvar == 'year':
                 ax[io].set_xlim([0.9, 10.1])
                 # if yvar == 'sigma_w':
                 #    ax.set_ylim([0.005, None])
             ax[io].grid()
             if io == 0:
-                ax[io].legend()
+                ax[io].legend(fontsize=20)
+                # ax[io].legend(loc='upper left', bbox_to_anchor=(
+                #    -0.1, 1.3), ncol=3, frameon=False, fontsize=20)
             ax[io].set_xlabel(legx)
             ax[io].set_ylabel(legy)
 
@@ -268,24 +287,33 @@ for key, vals in df.items():
     cosmo_bud = budget(vals)
     df[key] = cosmo_bud
     df[key]['frac_high_z'] = df[key]['nsn_z_09']/df[key]['nsn_DD']
-    df[key]['nsn_ultra'] = df[key]['nsn_DD_COSMOS']+df[key]['nsn_DD_XMM-LSS']
+    df[key]['nsn_DD_ultra'] = df[key]['nsn_DD_COSMOS']+df[key]['nsn_DD_XMM-LSS']
 
 # plot_multiple(df, yvartwin='budget')
 # plot(df, yvar='w', legy='w')
 # plot(df, yvar='Om', legy='Om')
+
+"""
 plot(df, yvar='sigma_w', legy='$\sigma_w$', tag_budget=[
-     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+     0.05, 0.0788, 0.10], tag_marker=['*', '^', 's'])
 plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
-     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
+     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
 
+plot(df, xvar='nsn_DD_ultra', legx='$N_{SN}^{ultra}$', tag_budget=[
+     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
+"""
 plot_syste(df, df_syste, yvar='sigma_w', tag_budget=[
-    0.05, 0.08, 0.10], legy='$\Delta\sigma_w$', tag_marker=['*', '^', 's'])
+    0.05, 0.0788, 0.10], legy='$\Delta\sigma_w$', tag_marker=['*', '^', 's'], norm=True)
 
+
+"""
+plot_syste(df, df_syste, yvar='nsn_DD', tag_budget=[
+    0.05, 0.08, 0.10], legy='$\Delta N_{SN}$', tag_marker=['*', '^', 's'], norm=True)
+"""
 """
 plot_syste(df, df_syste, yvar='w',
            legy='$w$', tag_marker=['*', '^', 's'])
-"""
-"""
+
 plot(df, xvar='nsn_z_09', legx='$N_{SN}^{z\geq 0.9}$', tag_budget=[
      0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
 plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
