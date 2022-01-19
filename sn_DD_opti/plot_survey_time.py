@@ -19,7 +19,6 @@ def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigm
     keys = list(df.keys())
     ls = dict(zip(keys, lls[:len(keys)]))
     for key, vals in df.items():
-        print('elelelele', vals.columns)
         ax.plot(vals[xvar], vals[yvar], marker='o',
                 label=corresp[key], ls=ls[key], ms=5, color=ccolors[key])
         if len(tag_budget) > 0:
@@ -288,23 +287,46 @@ for key, vals in df.items():
     df[key] = cosmo_bud
     df[key]['frac_high_z'] = df[key]['nsn_z_09']/df[key]['nsn_DD']
     df[key]['nsn_DD_ultra'] = df[key]['nsn_DD_COSMOS']+df[key]['nsn_DD_XMM-LSS']
+    if 'nsn_ultra' in df[key].columns:
+        df[key]['nsn_ultra_zless_08'] = df[key]['nsn_ultra'] - \
+            df[key]['nsn_ultra_z_08']
+        df[key]['nsn_dd_zless_05'] = df[key]['nsn_dd']-df[key]['nsn_dd_z_05']
+        df[key]['nsn_ultra_spectro'] = 200*df[key]['year']
+        df[key]['nsn_dd_spectro'] = 200*df[key]['year']
+        df[key]['nsn_spectroid'] = df[key][['nsn_ultra_zless_08', 'nsn_ultra_spectro']].min(axis=1) +\
+            df[key][['nsn_dd_zless_05', 'nsn_dd_spectro']].min(axis=1)
+
+        df[key]['nsn_photid'] = df[key]['nsn_DD']-df[key]['nsn_spectroid']
+        df[key]['frac_photid'] = df[key]['nsn_photid']/df[key]['nsn_DD']
 
 # plot_multiple(df, yvartwin='budget')
 # plot(df, yvar='w', legy='w')
 # plot(df, yvar='Om', legy='Om')
 
-"""
+
 plot(df, yvar='sigma_w', legy='$\sigma_w$', tag_budget=[
      0.05, 0.0788, 0.10], tag_marker=['*', '^', 's'])
+
 plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
      0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
 
+plot(df, xvar='frac_photid', legx='$frac_{photid}$', tag_budget=[
+     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
+
+plot(df, xvar='nsn_photid', legx='$N_{SN}^{photid}$', tag_budget=[
+     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
+
+plot(df, xvar='nsn_spectroid', legx='$N_{SN}^{spectroid}$', tag_budget=[
+     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
+
+"""
 plot(df, xvar='nsn_DD_ultra', legx='$N_{SN}^{ultra}$', tag_budget=[
      0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
 """
+"""
 plot_syste(df, df_syste, yvar='sigma_w', tag_budget=[
     0.05, 0.0788, 0.10], legy='$\Delta\sigma_w$', tag_marker=['*', '^', 's'], norm=True)
-
+"""
 
 """
 plot_syste(df, df_syste, yvar='nsn_DD', tag_budget=[
