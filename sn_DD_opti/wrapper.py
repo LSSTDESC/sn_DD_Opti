@@ -115,7 +115,7 @@ class DD_Budget:
         tab = Mod_z('{}/{}'.format(fDir, fName)).nvisits
         res = {}
         resb = {}
-        print(tab)
+        # print(tab)
         for cad in np.unique(tab['cadence']):
             idx = tab['cadence'] == cad
             sel = tab[idx]
@@ -155,7 +155,7 @@ class DD_Budget:
 
     def __call__(self, cosmodf):
 
-        print(cosmodf.columns)
+        # print(cosmodf.columns)
         cosmodf['budget'] = cosmodf.apply(
             lambda x: self.budget(x), axis=1)
 
@@ -173,7 +173,7 @@ class DD_Budget:
             lambda x:  len(x['ddf_dd']), axis=1)
         cosmodf['nddf'] = cosmodf['nddf_ultra']+cosmodf['nddf_dd']
 
-        print('finally', cosmodf)
+        #print('finally', cosmodf)
 
         return cosmodf
 
@@ -186,7 +186,7 @@ class DD_Budget:
         grp: pandas group
           with infos related to the survey
         """
-        print('hello', grp)
+
         Nvisits_tot = 0
         Nvisits_tot += self.Nvisits_field(grp, 'ultra')
         Nvisits_tot += self.Nvisits_field(grp, 'dd')
@@ -203,7 +203,7 @@ class DD_Budget:
         zcomp = grp['zcomp_{}'.format(suffix)]
         nseasons = grp['nseasons_{}'.format(suffix)]
         nddf = len(ddf)
-        print('helli', ddf, zcomp)
+        #print('helli', ddf, zcomp)
         for i in range(nddf):
             # get the number of visits per night corresponding to zcomp
             nvisits_night = self.visit_zlim[self.cadence](zcomp[i])
@@ -212,8 +212,8 @@ class DD_Budget:
             season_length = np.min([season_length, 180.])
             Nvisits_all_seas = self.Nvisits_seasons(
                 nvisits_night, season_length, nseasons[i])
-            print(ddf[i], zcomp[i],
-                  nseasons[i], nvisits_night, season_length, Nvisits_all_seas)
+            # print(ddf[i], zcomp[i],
+            #      nseasons[i], nvisits_night, season_length, Nvisits_all_seas)
             Nvisits_tot += Nvisits_all_seas
 
         return Nvisits_tot

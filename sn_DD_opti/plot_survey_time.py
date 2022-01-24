@@ -6,9 +6,85 @@ from wrapper import DD_Budget
 from scipy.interpolate import interp1d
 
 
-def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[]):
+def plot_new(res, varx='zcomp', vary='sigma_w', budget=[0.05, 0.08, 0.10]):
 
-    vva = ['deep_rolling_early', 'deep_rolling_ten_years', 'universal']
+    fig, ax = plt.subplots()
+
+    io = res['zcomp'] > 0.
+    sel = res[io]
+    if len(sel) > 0:
+        for bud in budget:
+            iob = np.abs(sel['budget']-bud) < 1.e-5
+            selb = sel[iob]
+            ax.plot(selb[varx], selb[vary])
+
+    # plt.show()
+
+
+def get_infos(df, xvar='year', yvar=['sigma_w', 'nsn_DD'], budget=[0.05, 0.08, 0.10]):
+
+    rtot = []
+    for key, vals in df.items():
+        r = []
+        print('Survey', key, vals[['conf', 'year', 'sigma_w']])
+        r.append(key)
+        zcomp = -1
+        if 'universal' in key:
+            zcomp = key.split('_')[-1]
+            zcomp = float(zcomp)
+        r.append(zcomp)
+        print('iii', vals['year'])
+        interp_bud = interp1d(
+            vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
+        for i, val in enumerate(budget):
+            ttime = interp_bud(val)
+            print('eee', ttime)
+            rp = list(r)
+            rp += [val, ttime]
+            for yv in yvar:
+                interp_var = interp1d(
+                    vals[xvar], vals[yv], bounds_error=False, fill_value=0.)
+                valres = interp_var(ttime)
+                print('resu budget', val, xvar, ttime, yv, valres)
+                rp.append(valres)
+                print('boo', rp)
+            rtot.append(rp)
+
+    return np.rec.fromrecords(rtot, names=['survey', 'zcomp', 'budget', 'time']+yvar)
+
+
+def add_infos(df):
+
+    for key, vals in df.items():
+
+        Ny = '{}'.format(int(np.median(vals['Ny'])))
+
+        fName = '{}_{}.npy'.format(prefix_Nvisits, Ny)
+        budget = DD_Budget(visitsDir, fName)
+        # add budget colmuns
+        cosmo_bud = budget(vals)
+        df[key] = cosmo_bud
+        df[key]['frac_high_z'] = df[key]['nsn_z_09']/df[key]['nsn_DD']
+        df[key]['nsn_DD_ultra'] = df[key]['nsn_DD_COSMOS'] + \
+            df[key]['nsn_DD_XMM-LSS']
+        if 'nsn_ultra' in df[key].columns:
+            df[key]['nsn_ultra_zless_08'] = df[key]['nsn_ultra'] - \
+                df[key]['nsn_ultra_z_08']
+            df[key]['nsn_dd_zless_05'] = df[key]['nsn_dd']-df[key]['nsn_dd_z_05']
+            df[key]['nsn_ultra_spectro'] = 200*df[key]['year']
+            df[key]['nsn_dd_spectro'] = 200*df[key]['year']
+            df[key]['nsn_spectroid'] = df[key][['nsn_ultra_zless_08', 'nsn_ultra_spectro']].min(axis=1) +\
+                df[key][['nsn_dd_zless_05', 'nsn_dd_spectro']].min(axis=1)
+
+            df[key]['nsn_photid'] = df[key]['nsn_DD']-df[key]['nsn_spectroid']
+            df[key]['frac_photid'] = df[key]['nsn_photid']/df[key]['nsn_DD']
+    return df
+
+
+def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[], zcomp=0.7):
+
+    vva = ['deep_rolling_early', 'deep_rolling_ten_years',
+           'universal_{}'.format(zcomp)]
     vvp = ['Early Deep Rolling (EDR$^3$)',
            'Deep Rolling 10 years (DR$^{10Y}$)', 'Deep Universal (DU$^{0.65}$)']
     colors = ['red', 'blue', 'magenta']
@@ -18,21 +94,34 @@ def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigm
     lls = ['solid', 'dashed', 'dotted', 'dotted', 'solid', 'dashed', ]
     keys = list(df.keys())
     ls = dict(zip(keys, lls[:len(keys)]))
-    for key, vals in df.items():
-        ax.plot(vals[xvar], vals[yvar], marker='o',
-                label=corresp[key], ls=ls[key], ms=5, color=ccolors[key])
-        if len(tag_budget) > 0:
-            interp_bud = interp1d(
-                vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
-            interp_var = interp1d(
-                vals[xvar], vals[yvar], bounds_error=False, fill_value=0.)
-        print('Survey', key)
-        for i, val in enumerate(tag_budget):
-            ttime = interp_bud(val)
-            valres = interp_var(ttime)
-            ax.plot(ttime, valres,
-                    marker=tag_marker[i], color='k', ms=15., mfc='None', markeredgewidth=2)
-            print('resu budget', val, xvar, ttime, yvar, valres)
+    # for key, vals in df.items():
+    for key in vva:
+        vals = df[key]
+        go_plot = True
+        label = corresp[key]
+        if 'universal' in key:
+            idx = vals['year'] == 1
+            zcomph = np.round(np.mean(vals[idx]['zcomp_dd'].to_list()), 2)
+            label = label.replace('0.65', str(zcomp))
+            if np.abs(zcomp-zcomph) >= 1.e-4:
+                go_plot = False
+
+        vals = vals.to_records(index=False)
+        if go_plot:
+            ax.plot(vals[xvar], vals[yvar], marker='o',
+                    label=label, ls=ls[key], ms=5, color=ccolors[key])
+            if len(tag_budget) > 0:
+                interp_bud = interp1d(
+                    vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
+                interp_var = interp1d(
+                    vals[xvar], vals[yvar], bounds_error=False, fill_value=0.)
+                print('Survey', key)
+            for i, val in enumerate(tag_budget):
+                ttime = interp_bud(val)
+                valres = interp_var(ttime)
+                ax.plot(ttime, valres,
+                        marker=tag_marker[i], color='k', ms=15., mfc='None', markeredgewidth=2)
+                print('resu budget', val, xvar, ttime, yvar, valres)
 
     if yvartwin != '':
         axb = ax.twinx()
@@ -82,7 +171,7 @@ def plot_syste(df, df_syste, xvar='year', yvar='sigma_w', yvartwin='', legx='Yea
             dfb = vals.merge(dfsyst, left_on=[xvar], right_on=[xvar])
             varx = '{}_x'.format(yvar)
             vary = '{}_y'.format(yvar)
-            #print('hello', dfb[[varx, vary]])
+            # print('hello', dfb[[varx, vary]])
             dfb['diff'] = dfb[varx]-dfb[vary]
             if norm:
                 dfb['diff'] /= dfb['{}_x'.format(yvar)]
@@ -169,7 +258,7 @@ def plot_diff(df, ref=['deep_rolling_early', 'deep_rolling_ten_years', 'universa
         df_ref = df[refval]
         for key, vals in df.items():
             if refval in key and refval != key:
-                print('boo', refval, key)
+                # print('boo', refval, key)
                 ax.plot(df_ref[xvar], df_ref[yvar]-vals[yvar], label=key)
 
     ax.legend()
@@ -194,7 +283,7 @@ def load(fi):
     df['year'] = df['conf'].str.split('_').str.get(1).astype(int)
     df = df.sort_values(by=['year'])
 
-    print('ici', df)
+    # print('ici', df)
     return df
 
 
@@ -222,9 +311,39 @@ def load_b(fi, zcomp=0.65):
     sel = sel.sort_values(by=['sigma_w'], ascending=False)
     sel['year'] = sel.reset_index().index+1
 
-    print(sel)
+    # print(sel)
 
     return sel
+
+
+def gime_data(conf, zcomps=[0.65, 0.70]):
+
+    df = {}
+    df_syste = {}
+    for index, row in conf.iterrows():
+        fi = '{}/{}.hdf5'.format(cosmoDir, row['cosmoFile'])
+        nName = row['name']
+        ttype = row['type']
+        if 'universal' in nName:
+            # df['universal_0.60'] = load_b(fi, zcomp=0.60)
+            for zcomp in zcomps:
+                nNameb = '{}_{}'.format(nName, zcomp)
+                fload = load_b(fi, zcomp=zcomp)
+                if ttype == 'nominal':
+                    df[nNameb] = fload
+                else:
+                    df_syste[nNameb] = fload
+        else:
+            fload = load(fi)
+            if ttype == 'nominal':
+                df[nName] = fload
+            else:
+                df_syste[nName] = fload
+
+    for key, vals in df.items():
+        vals['sigma_w_rel'] = vals['sigma_w']/vals['w']
+
+    return df, df_syste
 
 
 parser = OptionParser()
@@ -234,6 +353,8 @@ parser.add_option("--cosmoDir", type=str, default='cosmo_files',
                   help="directory where cosmo files are located[%default]")
 parser.add_option('--cadence', type=float, default=1.,
                   help='cadence of observation[%default]')
+parser.add_option('--zcomp', type=float, default=0.70,
+                  help='redshift completeness for universal survey [%default]')
 parser.add_option('--config', type='str', default='config_survey_time.csv',
                   help='configuration file [%default]')
 parser.add_option('--prefix_Nvisits', type='str', default='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny',
@@ -245,12 +366,24 @@ cosmoDir = opts.cosmoDir
 visitsDir = opts.visitsDir
 cadence = opts.cadence
 prefix_Nvisits = opts.prefix_Nvisits
+zcomp = opts.zcomp
 
 conf = pd.read_csv(opts.config, comment='#')
+zcomps = [0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90]
+zcomps = [0.65, 0.7]
+df, df_syste = gime_data(
+    conf, zcomps=zcomps)
+print('rrrr', df)
+df = add_infos(df)
+res = get_infos(df)
 
-df = {}
-df_syste = {}
-
+"""
+plot_new(res, varx='zcomp', vary='time')
+plot_new(res, varx='zcomp', vary='sigma_w')
+plt.show()
+print(res)
+print(test)
+"""
 """
 for i in range(len(cosmoFiles)):
     fi = '{}/{}.hdf5'.format(cosmoDir, cosmoFiles[i])
@@ -261,55 +394,23 @@ for i in range(len(cosmoFiles)):
     else:
         df[nName] = load(fi)
 """
-for index, row in conf.iterrows():
-    fi = '{}/{}.hdf5'.format(cosmoDir, row['cosmoFile'])
-    nName = row['name']
-    ttype = row['type']
-    if 'universal' in nName:
-        # df['universal_0.60'] = load_b(fi, zcomp=0.60)
-        fload = load_b(fi, zcomp=0.65)
-    else:
-        fload = load(fi)
-    fload['sigma_w_rel'] = np.abs(fload['sigma_w']/fload['w'])
-    if ttype == 'nominal':
-        df[nName] = fload
-    else:
-        df_syste[nName] = fload
+
 
 # estimate Budget for all of these
 # budget class instance
-for key, vals in df.items():
-    Ny = '{}'.format(int(np.median(vals['Ny'])))
-    fName = '{}_{}.npy'.format(prefix_Nvisits, Ny)
-    budget = DD_Budget(visitsDir, fName)
-    # add budget colmuns
-    cosmo_bud = budget(vals)
-    df[key] = cosmo_bud
-    df[key]['frac_high_z'] = df[key]['nsn_z_09']/df[key]['nsn_DD']
-    df[key]['nsn_DD_ultra'] = df[key]['nsn_DD_COSMOS']+df[key]['nsn_DD_XMM-LSS']
-    if 'nsn_ultra' in df[key].columns:
-        df[key]['nsn_ultra_zless_08'] = df[key]['nsn_ultra'] - \
-            df[key]['nsn_ultra_z_08']
-        df[key]['nsn_dd_zless_05'] = df[key]['nsn_dd']-df[key]['nsn_dd_z_05']
-        df[key]['nsn_ultra_spectro'] = 200*df[key]['year']
-        df[key]['nsn_dd_spectro'] = 200*df[key]['year']
-        df[key]['nsn_spectroid'] = df[key][['nsn_ultra_zless_08', 'nsn_ultra_spectro']].min(axis=1) +\
-            df[key][['nsn_dd_zless_05', 'nsn_dd_spectro']].min(axis=1)
 
-        df[key]['nsn_photid'] = df[key]['nsn_DD']-df[key]['nsn_spectroid']
-        df[key]['frac_photid'] = df[key]['nsn_photid']/df[key]['nsn_DD']
 
 # plot_multiple(df, yvartwin='budget')
 # plot(df, yvar='w', legy='w')
 # plot(df, yvar='Om', legy='Om')
 
 
-plot(df, yvar='sigma_w', legy='$\sigma_w$', tag_budget=[
-     0.05, 0.0788, 0.10], tag_marker=['*', '^', 's'])
+plot(df, yvar='w', legy='$\sigma_w$', tag_budget=[
+     0.05, 0.0788, 0.10], tag_marker=['*', '^', 's'], zcomp=zcomp)
 
 plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
-     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
-
+     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'], zcomp=zcomp)
+"""
 plot(df, xvar='frac_photid', legx='$frac_{photid}$', tag_budget=[
      0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
 
@@ -318,7 +419,7 @@ plot(df, xvar='nsn_photid', legx='$N_{SN}^{photid}$', tag_budget=[
 
 plot(df, xvar='nsn_spectroid', legx='$N_{SN}^{spectroid}$', tag_budget=[
      0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
-
+"""
 """
 plot(df, xvar='nsn_DD_ultra', legx='$N_{SN}^{ultra}$', tag_budget=[
      0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])

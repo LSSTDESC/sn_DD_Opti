@@ -8,6 +8,7 @@ from scipy.ndimage.filters import gaussian_filter
 from matplotlib.ticker import MaxNLocator
 import pandas as pd
 from wrapper import DD_Budget
+import matplotlib as mpl
 """
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
@@ -615,6 +616,8 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     fig, ax = plt.subplots(figsize=(15, 10))
     fig.subplots_adjust(top=0.85, left=0.15)
 
+    trans = dict(zip(['ADFS', 'CDFS', 'ELAIS'], [
+                 'Euclid/Roman', 'CDFS', 'ELAIS']))
     tt = 'Deep Rolling 10 Years survey'
     plotName = '{}_deep_rolling_all.png'.format(toplot)
     # check the type of run in cosmo_res file
@@ -663,7 +666,7 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
                 leg += ddf_ultra[i] + \
                     '$_{'+str(seasons_ultra[i])+'}^{'+str(zcomp_ultra[i])+'}$'
         for key, vals in ddf_dd_new.items():
-            legb += key + \
+            legb += trans[key] + \
                 '$_{'+str(np.sum(vals['nseasons'])) + \
                 '}^{'+str(np.median(vals['zcomp']))+'}$'
 
@@ -803,14 +806,27 @@ def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='ndd
         cosmo_res, yaxis, xaxis, 'budget', nbins=100, method='linear')
     print('bud', BUD)
 
+    ccol = 'lightgreen'
+    #ccol = 'ghostwhite'
+    cmap = (mpl.colors.ListedColormap(
+        [ccol]))
+
+    """
+    bounds = [nfmin, nfmax]
+    norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+    """
+    # ax.imshow(BUD, extent=(nfmin, nfmax, zmin, zmax),
+    #          aspect='auto', alpha=0.25, cmap=cmap)
+
+    """
     ax.imshow(BUD, extent=(nfmin, nfmax, zmin, zmax),
               aspect='auto', alpha=0.25, cmap='hsv')
-
+    """
     ZLIMITB, NDDF, ZVAR = getVals(
         cosmo_res, yaxis, xaxis, var, nbins=100, method='linear')
 
     # ax[1].imshow(NSN, extent=(nfmin, nfmax, zmin, zmax),
-    #             aspect='auto', alpha=0.25, cmap='hsv')
+    #             aspect='equal', alpha=0.25, cmap='hsv')
 
     zzv = [0.5, 0.6, 0.7, 0.8, 0.9]
     if runtype == 'deep_rolling':
