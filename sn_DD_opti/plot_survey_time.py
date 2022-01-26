@@ -76,7 +76,7 @@ class Budget_Time:
         """
         df = pd.read_hdf(fi)
 
-        #df['year'] = df['conf'].str.split('_').str.get(1).astype(int)
+        # df['year'] = df['conf'].str.split('_').str.get(1).astype(int)
         df = df.sort_values(by=['year'])
 
         # print('ici', df)
@@ -137,9 +137,9 @@ class Budget_Time:
         print(self.data[['confName', 'zcomp_dd_str', 'zcomp_ultra_str']])
 
         self.data = self.modif_early()
-        #confref = 'universal_0.00_0.65'
+        # confref = 'universal_0.00_0.65'
         confrefs = ['deep_rolling_early_0.80_0.70']
-        self.plot(confrefs)
+        # self.plot(confrefs)
         rr = self.data.groupby(['confName', 'zcomp_dd_str', 'zcomp_ultra_str']).apply(
             lambda x: self.ana_grp(x)).reset_index()
 
@@ -196,6 +196,7 @@ class Budget_Time:
 
         resdict = {}
 
+        print('hello man', grp.name)
         # budget interpolator
         interp_bud = interp1d(
             grp['budget'], grp[xvar], bounds_error=False, fill_value=0.)
@@ -564,6 +565,38 @@ def ana_res(infos, xvar='sigma_w', budget=0.05):
     print(infos[vvar])
 
 
+def plot_info(df, xvar='zcomp_dd', yvar='sigma_w', xleg='$z_{complete}^{DD}$', yleg='$\sigma_w$', budget=0.05):
+
+    yplot = '{}_{}'.format(yvar, budget)
+
+    fig, ax = plt.subplots(figsize=(15, 8))
+    fig.suptitle('Budget: {}'.format(budget))
+    confPlot = ['deep_rolling_early_0.70',
+                'deep_rolling_early_0.75',
+                'deep_rolling_early_0.80',
+                'universal_0.00', 'deep_rolling_ten_years_0.75']
+    # namePlot = ['EDR$^3_{0.70}$',
+    #            'EDR$^3_{0.75}$', 'EDR$^3_{0.80}$', 'DU', 'DR$^{10Y}_{0.75}$']
+    namePlot = ['EDR$_{0.70}$',
+                'EDR$_{0.75}$', 'EDR$_{0.80}$', 'DU', 'DR$_{0.75}$']
+    corresp = dict(zip(confPlot, namePlot))
+    markers = ['o', 's', '*', 'p', '>']
+    mm = dict(zip(confPlot, markers))
+
+    for confName in confPlot:
+        idx = df['confName'].str.contains(confName)
+        sel = df[idx].to_records(index=False)
+        sel = sel[sel[yplot] > 1.e-5]
+        print('aooo', sel[yplot], sel[xvar])
+        ax.plot(sel[xvar], sel[yplot], marker=mm[confName],
+                ls='None', ms=15, label=corresp[confName])
+
+    ax.grid()
+    ax.set_xlabel(xleg)
+    ax.set_ylabel(yleg)
+    ax.legend(loc='upper left')
+
+
 parser = OptionParser()
 parser.add_option("--visitsDir", type=str, default='visits_files',
                   help="directory where visits files are located[%default]")
@@ -592,6 +625,17 @@ bb = Budget_Time(opts.config, cosmoDir=cosmoDir,
 infos = bb.get_infos()
 
 ana_res(infos)
+print(infos.columns)
+infos['zcomp_dd'] = infos['zcomp_dd_str'].astype(float)
+infos['zcomp_ultra'] = infos['zcomp_ultra_str'].astype(float)
+budget = 0.05
+plot_info(infos, xvar='zcomp_dd', yvar='sigma_w',
+          xleg='$z_{complete}^{DD}$', yleg='$\sigma_w$', budget=budget)
+plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD',
+          xleg='$z_{complete}^{DD}$', yleg='$N_{SN}$', budget=budget)
+plot_info(infos, xvar='zcomp_dd', yvar='time',
+          xleg='$z_{complete}^{DD}$', yleg='Time budget [y]', budget=budget)
+plt.show()
 print(test)
 
 conf = pd.read_csv(opts.config, comment='#')
