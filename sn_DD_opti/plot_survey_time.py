@@ -119,7 +119,7 @@ class Budget_Time:
         df['sigma_w_rel'] = df['sigma_w']/df['w']
         return df
 
-    def get_infos(self, xvar='year', yvar=['sigma_w', 'nsn_DD'], budget=[0.05, 0.08, 0.10]):
+    def get_infos(self, xvar='year', yvar=['sigma_w', 'nsn_DD', 'nsn_DD_ultra'], budget=[0.05, 0.08, 0.10]):
 
         rtot = []
 
@@ -141,7 +141,7 @@ class Budget_Time:
         confrefs = ['deep_rolling_early_0.80_0.70']
         # self.plot(confrefs)
         rr = self.data.groupby(['confName', 'zcomp_dd_str', 'zcomp_ultra_str']).apply(
-            lambda x: self.ana_grp(x)).reset_index()
+            lambda x: self.ana_grp(x, yvar=yvar)).reset_index()
 
         return rr
         """
@@ -621,7 +621,7 @@ zcomp = opts.zcomp
 
 bb = Budget_Time(opts.config, cosmoDir=cosmoDir,
                  prefix_Nvisits=prefix_Nvisits,
-                 visitsDir=visitsDir)
+                 visitsDir=visitsDir, budget=[0.05, 0.06, 0.08, 0.10])
 infos = bb.get_infos()
 
 ana_res(infos)
@@ -635,6 +635,8 @@ plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD',
           xleg='$z_{complete}^{DD}$', yleg='$N_{SN}$', budget=budget)
 plot_info(infos, xvar='zcomp_dd', yvar='time',
           xleg='$z_{complete}^{DD}$', yleg='Time budget [y]', budget=budget)
+plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD_ultra',
+          xleg='$z_{complete}^{DD}$', yleg='$N_{SN}^{ultra}$', budget=budget)
 plt.show()
 print(test)
 
