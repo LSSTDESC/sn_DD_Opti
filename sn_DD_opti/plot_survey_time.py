@@ -198,21 +198,26 @@ class Budget_Time:
 
         print('hello man', grp.name)
         # budget interpolator
+        rt = []
         interp_bud = interp1d(
             grp['budget'], grp[xvar], bounds_error=False, fill_value=0.)
         for i, val in enumerate(self.budget):
             ttime = interp_bud(val)
             tName = 'time_{}'.format(val)
             resdict[tName] = [ttime.tolist()]
+            ro = [val, ttime.tolist()]
             for yv in yvar:
                 vName = '{}_{}'.format(yv, val)
                 interp_var = interp1d(
                     grp[xvar], grp[yv], bounds_error=False, fill_value=0.)
                 valres = interp_var(ttime)
                 resdict[vName] = [valres.tolist()]
-
+                ro.append(valres.tolist())
+            rt.append(ro)
         print(grp.name, resdict)
-        return pd.DataFrame.from_dict(resdict)
+        resdf = pd.DataFrame(rt, columns=['budget', 'time']+yvar)
+        # return pd.DataFrame.from_dict(resdict)
+        return resdf
 
 
 def plot_new(res, varx='zcomp', vary='sigma_w', budget=[0.05, 0.08, 0.10]):
@@ -567,14 +572,14 @@ def ana_res(infos, xvar='sigma_w', budget=0.05):
 
 def plot_info(df, xvar='zcomp_dd', yvar='sigma_w', xleg='$z_{complete}^{DD}$', yleg='$\sigma_w$', budget=0.05):
 
-    yplot = '{}_{}'.format(yvar, budget)
-
-    fig, ax = plt.subplots(figsize=(15, 8))
+    fig, ax = plt.subplots(figsize=(12, 8))
     fig.suptitle('Budget: {}'.format(budget))
     confPlot = ['deep_rolling_early_0.70',
                 'deep_rolling_early_0.75',
                 'deep_rolling_early_0.80',
                 'universal_0.00', 'deep_rolling_ten_years_0.75']
+    llsty = ['solid', 'solid', 'solid', 'dashed', 'dotted']
+    lsty = dict(zip(confPlot, llsty))
     # namePlot = ['EDR$^3_{0.70}$',
     #            'EDR$^3_{0.75}$', 'EDR$^3_{0.80}$', 'DU', 'DR$^{10Y}_{0.75}$']
     namePlot = ['EDR$_{0.70}$',
@@ -583,18 +588,53 @@ def plot_info(df, xvar='zcomp_dd', yvar='sigma_w', xleg='$z_{complete}^{DD}$', y
     markers = ['o', 's', '*', 'p', '>']
     mm = dict(zip(confPlot, markers))
 
+    idm = np.abs(df['budget']-budget) < 1.e-5
+    dfb = df[idm]
     for confName in confPlot:
-        idx = df['confName'].str.contains(confName)
-        sel = df[idx].to_records(index=False)
-        sel = sel[sel[yplot] > 1.e-5]
-        print('aooo', sel[yplot], sel[xvar])
-        ax.plot(sel[xvar], sel[yplot], marker=mm[confName],
-                ls='None', ms=15, label=corresp[confName])
+        idx = dfb['confName'].str.contains(confName)
+        sel = dfb[idx].to_records(index=False)
+        sel = sel[sel[yvar] > 1.e-5]
+        print('aooo', sel[yvar], sel[xvar])
+        ax.plot(sel[xvar], sel[yvar], marker=mm[confName],
+                ls=lsty[confName], ms=15, label=corresp[confName], mfc='None')
 
     ax.grid()
     ax.set_xlabel(xleg)
     ax.set_ylabel(yleg)
-    ax.legend(loc='upper left')
+    ax.legend(ncol=3, frameon=False)
+
+
+def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sigma_w$'):
+
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    confPlot = ['deep_rolling_early_0.70_0.60',
+                'deep_rolling_early_0.75_0.60',
+                'deep_rolling_early_0.80_0.60',
+                'universal_0.00_0.65', 'deep_rolling_ten_years_0.75_0.65']
+    llsty = ['solid', 'solid', 'solid', 'dashed', 'dotted']
+    lsty = dict(zip(confPlot, llsty))
+    # namePlot = ['EDR$^3_{0.70}$',
+    #            'EDR$^3_{0.75}$', 'EDR$^3_{0.80}$', 'DU', 'DR$^{10Y}_{0.75}$']
+    namePlot = ['EDR$_{0.70}^{0.60}$',
+                'EDR$_{0.75}^{0.60}$', 'EDR$_{0.80}^{0.60}$', 'DU$^{0.65}$', 'DR$_{0.75}^{0.65}$']
+    corresp = dict(zip(confPlot, namePlot))
+    markers = ['o', 's', '*', 'p', '>']
+    mm = dict(zip(confPlot, markers))
+
+    for confName in confPlot:
+        idx = df['confName'].str.contains(confName)
+        sel = df[idx].to_records(index=False)
+        sel = sel[sel[yvar] > 1.e-5]
+        print('aooo', sel[yvar], sel[xvar])
+        ax.plot(sel[xvar], sel[yvar], marker=mm[confName],
+                ls=lsty[confName], ms=15, label=corresp[confName], mfc='None')
+
+    ax.grid()
+    ax.set_xlabel(xleg)
+    ax.set_ylabel(yleg)
+    ax.legend(ncol=3, frameon=False)
+    #ax.legend(bbox_to_anchor=(-0.3, 0.7), ncol=5, fontsize=12, frameon=False)
 
 
 parser = OptionParser()
@@ -621,22 +661,34 @@ zcomp = opts.zcomp
 
 bb = Budget_Time(opts.config, cosmoDir=cosmoDir,
                  prefix_Nvisits=prefix_Nvisits,
-                 visitsDir=visitsDir, budget=[0.05, 0.06, 0.08, 0.10])
+                 visitsDir=visitsDir, budget=np.arange(0.03, 0.11, 0.01))
 infos = bb.get_infos()
 
-ana_res(infos)
+print('alors', infos)
+
+# ana_res(infos)
 print(infos.columns)
 infos['zcomp_dd'] = infos['zcomp_dd_str'].astype(float)
 infos['zcomp_ultra'] = infos['zcomp_ultra_str'].astype(float)
-budget = 0.05
+"""
+plot_vs_budget(infos, xvar='budget', yvar='nsn_DD',
+               xleg='budget', yleg='$N_{SN}$')
+plot_vs_budget(infos, xvar='budget', yvar='time',
+               xleg='budget', yleg='Time budget [y]')
+plot_vs_budget(infos, xvar='budget', yvar='sigma_w',
+               xleg='budget', yleg='$\sigma_w$')
+"""
+budget = 0.06
 plot_info(infos, xvar='zcomp_dd', yvar='sigma_w',
-          xleg='$z_{complete}^{DD}$', yleg='$\sigma_w$', budget=budget)
+          xleg='$z_{complete}^{deep}$', yleg='$\sigma_w$', budget=budget)
+"""
 plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD',
           xleg='$z_{complete}^{DD}$', yleg='$N_{SN}$', budget=budget)
 plot_info(infos, xvar='zcomp_dd', yvar='time',
           xleg='$z_{complete}^{DD}$', yleg='Time budget [y]', budget=budget)
 plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD_ultra',
           xleg='$z_{complete}^{DD}$', yleg='$N_{SN}^{ultra}$', budget=budget)
+"""
 plt.show()
 print(test)
 
