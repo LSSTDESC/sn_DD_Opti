@@ -119,7 +119,7 @@ class Budget_Time:
         df['sigma_w_rel'] = df['sigma_w']/df['w']
         return df
 
-    def get_infos(self, xvar='year', yvar=['sigma_w', 'nsn_DD', 'nsn_DD_ultra'], budget=[0.05, 0.08, 0.10]):
+    def get_infos(self, xvar='year', yvar=['sigma_w', 'nsn_DD', 'nsn_DD_ultra', 'nsn_spectro_ultra_yearly'], budget=[0.05, 0.08, 0.10]):
 
         rtot = []
 
@@ -634,7 +634,7 @@ def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sig
     ax.set_xlabel(xleg)
     ax.set_ylabel(yleg)
     ax.legend(ncol=3, frameon=False)
-    #ax.legend(bbox_to_anchor=(-0.3, 0.7), ncol=5, fontsize=12, frameon=False)
+    # ax.legend(bbox_to_anchor=(-0.3, 0.7), ncol=5, fontsize=12, frameon=False)
 
 
 parser = OptionParser()
@@ -666,6 +666,8 @@ infos = bb.get_infos()
 
 print('alors', infos)
 
+outName = '{}/budget_summary.hdf5'.format(cosmoDir)
+infos.to_hdf(outName, key='summary')
 # ana_res(infos)
 print(infos.columns)
 infos['zcomp_dd'] = infos['zcomp_dd_str'].astype(float)
@@ -678,18 +680,20 @@ plot_vs_budget(infos, xvar='budget', yvar='time',
 plot_vs_budget(infos, xvar='budget', yvar='sigma_w',
                xleg='budget', yleg='$\sigma_w$')
 """
-budget = 0.06
+"""
+budget = 0.05
 plot_info(infos, xvar='zcomp_dd', yvar='sigma_w',
           xleg='$z_{complete}^{deep}$', yleg='$\sigma_w$', budget=budget)
-"""
 plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD',
           xleg='$z_{complete}^{DD}$', yleg='$N_{SN}$', budget=budget)
 plot_info(infos, xvar='zcomp_dd', yvar='time',
           xleg='$z_{complete}^{DD}$', yleg='Time budget [y]', budget=budget)
 plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD_ultra',
           xleg='$z_{complete}^{DD}$', yleg='$N_{SN}^{ultra}$', budget=budget)
-"""
+plot_info(infos, xvar='zcomp_dd', yvar='nsn_spectro_ultra_yearly',
+          xleg='$z_{complete}^{DD}$', yleg='$N_{SN}^{ultra}$', budget=budget)
 plt.show()
+"""
 print(test)
 
 conf = pd.read_csv(opts.config, comment='#')
