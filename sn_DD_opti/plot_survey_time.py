@@ -3,36 +3,41 @@ from __init__ import plt
 import numpy as np
 from optparse import OptionParser
 from wrapper import DD_Budget
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, make_interp_spline, UnivariateSpline
+from scipy.ndimage.filters import gaussian_filter
+
+from collections import OrderedDict
+
+linestyles = OrderedDict(
+    [('solid',               (0, ())),
+     ('loosely dotted',      (0, (1, 10))),
+     ('dotted',              (0, (1, 5))),
+     ('densely dotted',      (0, (1, 1))),
+
+     ('loosely dashed',      (0, (5, 10))),
+     ('dashed',              (0, (5, 5))),
+     ('densely dashed',      (0, (5, 1))),
+
+     ('loosely dashdotted',  (0, (3, 10, 1, 10))),
+     ('dashdotted',          (0, (3, 5, 1, 5))),
+     ('densely dashdotted',  (0, (3, 1, 1, 1))),
+
+     ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
+     ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
+     ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))])
 
 
-class Budget_Time:
-    """
-    class to estimate for each configuration some infos corresponding to a set of budgets
-
-    Parameters
-    ---------------
-    config: str
-      list of files to process (csv file)
-    budget: list(float), opt
-      list of budget to consider (default: [0.05,0.08,0.1])
-
-
-    """
-
+class CosmoData:
     def __init__(self, config, cosmoDir='cosmo_files_yearly',
                  prefix_Nvisits='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny',
-                 visitsDir='visits_files', budget=[0.05, 0.08, 0.1]):
+                 visitsDir='visits_files'):
 
         conf = pd.read_csv(config, comment='#')
         self.cosmoDir = cosmoDir
         self.prefix_Nvisits = prefix_Nvisits
         self.visitsDir = visitsDir
-        self.budget = budget
 
         self.data = self.get_data(conf)
-
-        print(self.data)
 
     def get_data(self, conf):
         """
@@ -96,6 +101,7 @@ class Budget_Time:
         pandas df with added values
 
         """
+
         Ny = '{}'.format(int(np.median(df['Ny'])))
 
         fName = '{}_{}.npy'.format(self.prefix_Nvisits, Ny)
@@ -117,59 +123,27 @@ class Budget_Time:
             df['nsn_photid'] = df['nsn_DD']-df['nsn_spectroid']
             df['frac_photid'] = df['nsn_photid']/df['nsn_DD']
         df['sigma_w_rel'] = df['sigma_w']/df['w']
-        return df
-
-    def get_infos(self, xvar='year', yvar=['sigma_w', 'nsn_DD', 'nsn_DD_ultra', 'nsn_spectro_ultra_yearly'], budget=[0.05, 0.08, 0.10]):
-
-        rtot = []
-
-        print(self.data.columns)
-        self.data = self.data.round(
+        df = df.round(
             {'zcomp_dd_unique': 2, 'zcomp_ultra_unique': 2})
-        self.data['zcomp_dd_str'] = self.data['zcomp_dd_unique'].astype(
+        df = df.fillna(0.0)
+        print('hello', df[['zcomp_dd_unique', 'zcomp_ultra_unique']])
+        df['zcomp_dd_str'] = df['zcomp_dd_unique'].astype(
             str).apply(
             lambda x: x.ljust(4, '0'))
 
-        self.data['zcomp_ultra_str'] = self.data['zcomp_ultra_unique'].astype(
+        df['zcomp_ultra_str'] = df['zcomp_ultra_unique'].astype(
             str).apply(lambda x: x.ljust(4, '0'))
-        self.data['confName'] = self.data['confName']+'_' + \
-            self.data['zcomp_ultra_str']+'_'+self.data['zcomp_dd_str']
-        print(self.data[['confName', 'zcomp_dd_str', 'zcomp_ultra_str']])
+        df['confName'] = df['confName']+'_' + \
+            df['zcomp_ultra_str']+'_'+df['zcomp_dd_str']
+        df = self.modif_early(df)
+        return df
 
-        self.data = self.modif_early()
-        # confref = 'universal_0.00_0.65'
-        confrefs = ['deep_rolling_early_0.80_0.70']
-        # self.plot(confrefs)
-        rr = self.data.groupby(['confName', 'zcomp_dd_str', 'zcomp_ultra_str']).apply(
-            lambda x: self.ana_grp(x, yvar=yvar)).reset_index()
+    def modif_early(self, data):
 
-        return rr
-        """
-        print(rr)
+        idx = data['confName'].str.contains("deep_rolling_early")
 
-        idx = rr['confName'] == confrefs[0]
-        sel = rr[idx]
-        print(sel[['time_0.05', 'sigma_w_0.05', 'nsn_DD_0.05']])
-        """
-
-    def plot(self, confNames):
-
-        sel = pd.DataFrame()
-        for confName in confNames:
-            idx = self.data['confName'] == confName
-            sel = pd.concat((sel, self.data[idx]))
-        sel = sel.sort_values(by=['year'])
-        fig, ax = plt.subplots()
-        ax.plot(sel['year'], sel['budget'])
-
-        plt.show()
-
-    def modif_early(self):
-
-        idx = self.data['confName'].str.contains("deep_rolling_early")
-
-        sel = self.data[idx]
-        df_new = pd.DataFrame(self.data[~idx])
+        sel = data[idx]
+        df_new = pd.DataFrame(data[~idx])
         print('alors man', sel['confName'])
         for confName in sel['confName'].unique():
             ido = sel['confName'] == confName
@@ -180,8 +154,8 @@ class Budget_Time:
                 cconfName = '_'.join(confName.split('_')[:3])
                 str_search = '{}_{}_0.00'.format(cconfName, z_ultra)
                 print('searching string', str_search)
-                idata = self.data['confName'] == str_search
-                seldata = self.data[idata]
+                idata = data['confName'] == str_search
+                seldata = data[idata]
                 if len(seldata) > 0:
                     print('yes man', confName, seldata)
                     dfcp = pd.DataFrame(seldata)
@@ -191,33 +165,6 @@ class Budget_Time:
                     dfcon = pd.concat((dfcp, selb))
                     df_new = pd.concat((df_new, dfcon))
         return df_new
-
-    def ana_grp(self, grp, xvar='year', yvar=['sigma_w', 'nsn_DD']):
-
-        resdict = {}
-
-        print('hello man', grp.name)
-        # budget interpolator
-        rt = []
-        interp_bud = interp1d(
-            grp['budget'], grp[xvar], bounds_error=False, fill_value=0.)
-        for i, val in enumerate(self.budget):
-            ttime = interp_bud(val)
-            tName = 'time_{}'.format(val)
-            resdict[tName] = [ttime.tolist()]
-            ro = [val, ttime.tolist()]
-            for yv in yvar:
-                vName = '{}_{}'.format(yv, val)
-                interp_var = interp1d(
-                    grp[xvar], grp[yv], bounds_error=False, fill_value=0.)
-                valres = interp_var(ttime)
-                resdict[vName] = [valres.tolist()]
-                ro.append(valres.tolist())
-            rt.append(ro)
-        print(grp.name, resdict)
-        resdf = pd.DataFrame(rt, columns=['budget', 'time']+yvar)
-        # return pd.DataFrame.from_dict(resdict)
-        return resdf
 
 
 def plot_new(res, varx='zcomp', vary='sigma_w', budget=[0.05, 0.08, 0.10]):
@@ -267,6 +214,7 @@ def get_infos(df, xvar='year', yvar=['sigma_w', 'nsn_DD'], budget=[0.05, 0.08, 0
     return np.rec.fromrecords(rtot, names=['survey', 'zcomp', 'budget', 'time']+yvar)
 
 
+"""
 def add_infos(df):
 
     for key, vals in df.items():
@@ -293,62 +241,66 @@ def add_infos(df):
             df[key]['nsn_photid'] = df[key]['nsn_DD']-df[key]['nsn_spectroid']
             df[key]['frac_photid'] = df[key]['nsn_photid']/df[key]['nsn_DD']
     return df
+"""
 
 
-def plot(df, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[], zcomp=0.7):
+def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
+         surveyName=['deep_rolling_early_0.80_0.60', 'deep_rolling_early_0.75_0.60', 'deep_rolling_early_0.70_0.60',
+                     'deep_rolling_ten_years_0.75_0.65', 'universal_0.00_0.65', ],
+         plotName=['EDR$_{0.80}^{0.60}$', 'EDR$_{0.75}^{0.60}$',
+                   'EDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
+         lls=['solid', linestyles['densely dashdotdotted'],
+              'dashdot', 'dotted', 'dashed'],
+         colors=['red', 'red', 'red', 'magenta', 'blue'], tag_budget=[], tag_marker=[], smooth_it=True, figtitle=''):
 
-    vva = ['deep_rolling_early', 'deep_rolling_ten_years',
-           'universal_{}'.format(zcomp)]
-    vvp = ['Early Deep Rolling (EDR$^3$)',
-           'Deep Rolling 10 years (DR$^{10Y}$)', 'Deep Universal (DU$^{0.65}$)']
-    colors = ['red', 'blue', 'magenta']
-    corresp = dict(zip(vva, vvp))
-    ccolors = dict(zip(vva, colors))
+    corresp = dict(zip(surveyName, plotName))
+    print('all', corresp)
+    ccolors = dict(zip(surveyName, colors))
     fig, ax = plt.subplots(figsize=(15, 8))
-    lls = ['solid', 'dashed', 'dotted', 'dotted', 'solid', 'dashed', ]
-    keys = list(df.keys())
-    ls = dict(zip(keys, lls[:len(keys)]))
+    fig.suptitle(figtitle)
+    ls = dict(zip(surveyName, lls))
     # for key, vals in df.items():
-    for key in vva:
-        vals = df[key]
-        go_plot = True
-        label = corresp[key]
-        if 'universal' in key:
-            idx = vals['year'] == 1
-            zcomph = np.round(np.mean(vals[idx]['zcomp_dd'].to_list()), 2)
-            label = label.replace('0.65', str(zcomp))
-            if np.abs(zcomp-zcomph) >= 1.e-4:
-                go_plot = False
+    for sName in surveyName:
+        idx = df['confName'] == sName
+        vals = df[idx]
 
-        vals = vals.to_records(index=False)
-        if go_plot:
-            ax.plot(vals[xvar], vals[yvar], marker='o',
-                    label=label, ls=ls[key], ms=5, color=ccolors[key])
-            if len(tag_budget) > 0:
-                interp_bud = interp1d(
-                    vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
+        if not smooth_it:
+            ax.plot(vals[xvar], vals[yvar], marker='None',
+                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=2)
+
+        if smooth_it:
+            xmin, xmax = np.min(vals[xvar]), np.max(vals[xvar])
+            xnew = np.linspace(xmin, xmax, 100)
+            spl = make_interp_spline(
+                vals[xvar], vals[yvar], k=1)  # type: BSpline
+            spl = UnivariateSpline(vals[xvar], vals[yvar], k=5)
+            spl.set_smoothing_factor(0.5)
+            spl_smooth = spl(xnew)
+            ax.plot(xnew, spl_smooth, marker='None',
+                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=2)
+
+        if len(tag_budget) > 0:
+            interp_bud = interp1d(
+                vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
+            if not smooth_it:
                 interp_var = interp1d(
                     vals[xvar], vals[yvar], bounds_error=False, fill_value=0.)
-                print('Survey', key)
+            if smooth_it:
+                interp_var = interp1d(
+                    xnew, spl_smooth, bounds_error=False, fill_value=0.)
             for i, val in enumerate(tag_budget):
                 ttime = interp_bud(val)
                 valres = interp_var(ttime)
                 ax.plot(ttime, valres,
-                        marker=tag_marker[i], color='k', ms=15., mfc='None', markeredgewidth=2)
+                        marker=tag_marker[i], color='k', ms=5, markeredgewidth=2)
                 print('resu budget', val, xvar, ttime, yvar, valres)
-
-    if yvartwin != '':
-        axb = ax.twinx()
-        for key, vals in df.items():
-            axb.plot(vals[xvar], vals[yvartwin],
-                     marker='o', label=key, ls=ls[key])
 
     if xvar == 'year':
         ax.set_xlim([0.9, 10.1])
     if yvar == 'sigma_w':
-        ax.set_ylim([0.005, None])
+        ax.set_ylim([0.010, 0.05])
     ax.grid()
-    ax.legend()
+    ax.legend(ncol=3)
     ax.set_xlabel(legx)
     ax.set_ylabel(legy)
 
@@ -406,7 +358,7 @@ def plot_syste(df, df_syste, xvar='year', yvar='sigma_w', yvartwin='', legx='Yea
                 valres = interp_var(ttime)
                 valresm = interp_varm(ttime)
                 ax[io].plot(ttime, valres,
-                            marker=tag_marker[i], color='k', ms=15., mfc='None', markeredgewidth=2)
+                            marker=tag_marker[i], color='k', ms=10, markeredgewidth=2)
                 print('resu budget', val, xvar,
                       ttime, yvar, valres, valresm)
             if xvar == 'year':
@@ -479,168 +431,10 @@ def plot_diff(df, ref=['deep_rolling_early', 'deep_rolling_ten_years', 'universa
     ax.grid()
 
 
-def load(fi):
-    """
-    Function to load file in pandas df
-
-    Parameters
-    ---------------
-    fi: str
-      name of the file (full path) to be loaded
-
-    Returns
-    ----------
-    pandas df corresponding to the file
-    """
-    df = pd.read_hdf(fi)
-
-    df['year'] = df['conf'].str.split('_').str.get(1).astype(int)
-    df = df.sort_values(by=['year'])
-
-    # print('ici', df)
-    return df
-
-
-def load_b(fi, zcomp=0.65):
-    """
-    Function to load file in pandas df
-
-    Parameters
-    ---------------
-    fi: str
-      name of the file (full path) to be loaded
-    zcomp: float, opt
-      redshift completeness (default: 0.65)
-
-    Returns
-    ----------
-    pandas df corresponding to the file
-    """
-    df = pd.read_hdf(fi)
-
-    df['zcomp_dd_unique'] = df.apply(lambda x: np.mean(x['zcomp_dd']), axis=1)
-    idx = np.abs(df['zcomp_dd_unique']-zcomp) < 1.e-5
-
-    sel = df[idx]
-    sel = sel.sort_values(by=['sigma_w'], ascending=False)
-    sel['year'] = sel.reset_index().index+1
-
-    # print(sel)
-
-    return sel
-
-
-def gime_data(conf, zcomps=[0.65, 0.70]):
-
-    df = {}
-    df_syste = {}
-    for index, row in conf.iterrows():
-        fi = '{}/{}.hdf5'.format(cosmoDir, row['cosmoFile'])
-        nName = row['name']
-        ttype = row['type']
-        if 'universal' in nName:
-            # df['universal_0.60'] = load_b(fi, zcomp=0.60)
-            for zcomp in zcomps:
-                nNameb = '{}_{}'.format(nName, zcomp)
-                fload = load_b(fi, zcomp=zcomp)
-                if ttype == 'nominal':
-                    df[nNameb] = fload
-                else:
-                    df_syste[nNameb] = fload
-        else:
-            fload = load(fi)
-            if ttype == 'nominal':
-                df[nName] = fload
-            else:
-                df_syste[nName] = fload
-
-    for key, vals in df.items():
-        vals['sigma_w_rel'] = vals['sigma_w']/vals['w']
-
-    return df, df_syste
-
-
-def ana_res(infos, xvar='sigma_w', budget=0.05):
-
-    print('hello', infos)
-    vartot = '{}_{}'.format(xvar, budget)
-
-    infos = infos.sort_values(by=[vartot])
-    vvar = ['confName']+[vartot]
-    print(infos[vvar])
-
-
-def plot_info(df, xvar='zcomp_dd', yvar='sigma_w', xleg='$z_{complete}^{DD}$', yleg='$\sigma_w$', budget=0.05):
-
-    fig, ax = plt.subplots(figsize=(12, 8))
-    fig.suptitle('Budget: {}'.format(budget))
-    confPlot = ['deep_rolling_early_0.70',
-                'deep_rolling_early_0.75',
-                'deep_rolling_early_0.80',
-                'universal_0.00', 'deep_rolling_ten_years_0.75']
-    llsty = ['solid', 'solid', 'solid', 'dashed', 'dotted']
-    lsty = dict(zip(confPlot, llsty))
-    # namePlot = ['EDR$^3_{0.70}$',
-    #            'EDR$^3_{0.75}$', 'EDR$^3_{0.80}$', 'DU', 'DR$^{10Y}_{0.75}$']
-    namePlot = ['EDR$_{0.70}$',
-                'EDR$_{0.75}$', 'EDR$_{0.80}$', 'DU', 'DR$_{0.75}$']
-    corresp = dict(zip(confPlot, namePlot))
-    markers = ['o', 's', '*', 'p', '>']
-    mm = dict(zip(confPlot, markers))
-
-    idm = np.abs(df['budget']-budget) < 1.e-5
-    dfb = df[idm]
-    for confName in confPlot:
-        idx = dfb['confName'].str.contains(confName)
-        sel = dfb[idx].to_records(index=False)
-        sel = sel[sel[yvar] > 1.e-5]
-        print('aooo', sel[yvar], sel[xvar])
-        ax.plot(sel[xvar], sel[yvar], marker=mm[confName],
-                ls=lsty[confName], ms=15, label=corresp[confName], mfc='None')
-
-    ax.grid()
-    ax.set_xlabel(xleg)
-    ax.set_ylabel(yleg)
-    ax.legend(ncol=3, frameon=False)
-
-
-def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sigma_w$'):
-
-    fig, ax = plt.subplots(figsize=(12, 8))
-
-    confPlot = ['deep_rolling_early_0.70_0.60',
-                'deep_rolling_early_0.75_0.60',
-                'deep_rolling_early_0.80_0.60',
-                'universal_0.00_0.65', 'deep_rolling_ten_years_0.75_0.65']
-    llsty = ['solid', 'solid', 'solid', 'dashed', 'dotted']
-    lsty = dict(zip(confPlot, llsty))
-    # namePlot = ['EDR$^3_{0.70}$',
-    #            'EDR$^3_{0.75}$', 'EDR$^3_{0.80}$', 'DU', 'DR$^{10Y}_{0.75}$']
-    namePlot = ['EDR$_{0.70}^{0.60}$',
-                'EDR$_{0.75}^{0.60}$', 'EDR$_{0.80}^{0.60}$', 'DU$^{0.65}$', 'DR$_{0.75}^{0.65}$']
-    corresp = dict(zip(confPlot, namePlot))
-    markers = ['o', 's', '*', 'p', '>']
-    mm = dict(zip(confPlot, markers))
-
-    for confName in confPlot:
-        idx = df['confName'].str.contains(confName)
-        sel = df[idx].to_records(index=False)
-        sel = sel[sel[yvar] > 1.e-5]
-        print('aooo', sel[yvar], sel[xvar])
-        ax.plot(sel[xvar], sel[yvar], marker=mm[confName],
-                ls=lsty[confName], ms=15, label=corresp[confName], mfc='None')
-
-    ax.grid()
-    ax.set_xlabel(xleg)
-    ax.set_ylabel(yleg)
-    ax.legend(ncol=3, frameon=False)
-    # ax.legend(bbox_to_anchor=(-0.3, 0.7), ncol=5, fontsize=12, frameon=False)
-
-
 parser = OptionParser()
 parser.add_option("--visitsDir", type=str, default='visits_files',
                   help="directory where visits files are located[%default]")
-parser.add_option("--cosmoDir", type=str, default='cosmo_files',
+parser.add_option("--cosmoDir", type=str, default='cosmo_files_yearly_zspectro_x1c_1sigma_uy',
                   help="directory where cosmo files are located[%default]")
 parser.add_option('--cadence', type=float, default=1.,
                   help='cadence of observation[%default]')
@@ -650,6 +444,11 @@ parser.add_option('--config', type='str', default='config_survey_time.csv',
                   help='configuration file [%default]')
 parser.add_option('--prefix_Nvisits', type='str', default='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny',
                   help='prefix for Nvisits file[%default]')
+parser.add_option('--nspectro', type='str', default='200',
+                  help='nspectro tag [%default]')
+parser.add_option('--figtitle', type='str', default='$N_{host}^{spectro}$=200/year',
+                  help='plot title [%default]')
+
 
 opts, args = parser.parse_args()
 
@@ -658,128 +457,26 @@ visitsDir = opts.visitsDir
 cadence = opts.cadence
 prefix_Nvisits = opts.prefix_Nvisits
 zcomp = opts.zcomp
+config = opts.config
+nspectro = opts.nspectro
+config = opts.config
+figtitle = opts.figtitle
 
-bb = Budget_Time(opts.config, cosmoDir=cosmoDir,
-                 prefix_Nvisits=prefix_Nvisits,
-                 visitsDir=visitsDir, budget=np.arange(0.03, 0.11, 0.01))
-infos = bb.get_infos()
+# get the data
+cDir = '{}_{}'.format(cosmoDir, nspectro)
+df = CosmoData(config, cDir, prefix_Nvisits, visitsDir).data
 
-print('alors', infos)
-
-outName = '{}/budget_summary.hdf5'.format(cosmoDir)
-infos.to_hdf(outName, key='summary')
-# ana_res(infos)
-print(infos.columns)
-infos['zcomp_dd'] = infos['zcomp_dd_str'].astype(float)
-infos['zcomp_ultra'] = infos['zcomp_ultra_str'].astype(float)
-"""
-plot_vs_budget(infos, xvar='budget', yvar='nsn_DD',
-               xleg='budget', yleg='$N_{SN}$')
-plot_vs_budget(infos, xvar='budget', yvar='time',
-               xleg='budget', yleg='Time budget [y]')
-plot_vs_budget(infos, xvar='budget', yvar='sigma_w',
-               xleg='budget', yleg='$\sigma_w$')
-"""
-"""
-budget = 0.05
-plot_info(infos, xvar='zcomp_dd', yvar='sigma_w',
-          xleg='$z_{complete}^{deep}$', yleg='$\sigma_w$', budget=budget)
-plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD',
-          xleg='$z_{complete}^{DD}$', yleg='$N_{SN}$', budget=budget)
-plot_info(infos, xvar='zcomp_dd', yvar='time',
-          xleg='$z_{complete}^{DD}$', yleg='Time budget [y]', budget=budget)
-plot_info(infos, xvar='zcomp_dd', yvar='nsn_DD_ultra',
-          xleg='$z_{complete}^{DD}$', yleg='$N_{SN}^{ultra}$', budget=budget)
-plot_info(infos, xvar='zcomp_dd', yvar='nsn_spectro_ultra_yearly',
-          xleg='$z_{complete}^{DD}$', yleg='$N_{SN}^{ultra}$', budget=budget)
+print('hello', df['confName'])
+plot(df, tag_budget=[0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 plt.show()
-"""
-print(test)
-
-conf = pd.read_csv(opts.config, comment='#')
-zcomps = [0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90]
-zcomps = [0.65, 0.7]
-df, df_syste = gime_data(
-    conf, zcomps=zcomps)
-print('rrrr', df)
-df = add_infos(df)
-res = get_infos(df)
 
 """
-plot_new(res, varx='zcomp', vary='time')
-plot_new(res, varx='zcomp', vary='sigma_w')
-plt.show()
-print(res)
-print(test)
-"""
-"""
-for i in range(len(cosmoFiles)):
-    fi = '{}/{}.hdf5'.format(cosmoDir, cosmoFiles[i])
-    nName = nickNames[i]
-    if 'universal' in nName:
-        # df['universal_0.60'] = load_b(fi, zcomp=0.60)
-        df['universal_0.65'] = load_b(fi, zcomp=0.65)
-    else:
-        df[nName] = load(fi)
-"""
-
-
-# estimate Budget for all of these
-# budget class instance
-
-
-# plot_multiple(df, yvartwin='budget')
-# plot(df, yvar='w', legy='w')
-# plot(df, yvar='Om', legy='Om')
-
-
 plot(df, yvar='w', legy='$\sigma_w$', tag_budget=[
      0.05, 0.0788, 0.10], tag_marker=['*', '^', 's'], zcomp=zcomp)
 
 plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
      0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'], zcomp=zcomp)
-"""
-plot(df, xvar='frac_photid', legx='$frac_{photid}$', tag_budget=[
-     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
 
-plot(df, xvar='nsn_photid', legx='$N_{SN}^{photid}$', tag_budget=[
-     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
-
-plot(df, xvar='nsn_spectroid', legx='$N_{SN}^{spectroid}$', tag_budget=[
-     0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
-"""
-"""
 plot(df, xvar='nsn_DD_ultra', legx='$N_{SN}^{ultra}$', tag_budget=[
      0.05, 0.0785,  0.10], tag_marker=['*', '^', 's'])
 """
-"""
-plot_syste(df, df_syste, yvar='sigma_w', tag_budget=[
-    0.05, 0.0788, 0.10], legy='$\Delta\sigma_w$', tag_marker=['*', '^', 's'], norm=True)
-"""
-
-"""
-plot_syste(df, df_syste, yvar='nsn_DD', tag_budget=[
-    0.05, 0.08, 0.10], legy='$\Delta N_{SN}$', tag_marker=['*', '^', 's'], norm=True)
-"""
-"""
-plot_syste(df, df_syste, yvar='w',
-           legy='$w$', tag_marker=['*', '^', 's'])
-
-plot(df, xvar='nsn_z_09', legx='$N_{SN}^{z\geq 0.9}$', tag_budget=[
-     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
-plot(df, xvar='nsn_DD', legx='$N_{SN}$', tag_budget=[
-     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
-plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra}$', tag_budget=[
-     0.05, 0.08, 0.10], tag_marker=['*', '^', 's'])
-"""
-
-# plot(df, yvar='sigma_Om', legy='$\sigma_{\Omega_m}$', tag_budget=[
-#     0.05, 0.07, 0.09], tag_marker=['*', '^', 'v'])
-# plot(df, yvar='budget', legy='budget')
-# plot_diff(df)
-# plot_diff(df, yvar='w')
-# plot(df, yvar='budget', legy='budget')
-# plot(df, xvar='nsn_z_09')
-# plot(df, yvar='budget')
-plt.subplots_adjust(hspace=0, wspace=0)
-plt.show()
