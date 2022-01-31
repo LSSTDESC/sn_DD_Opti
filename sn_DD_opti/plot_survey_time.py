@@ -1,30 +1,10 @@
 import pandas as pd
-from __init__ import plt
+from __init__ import plt, linestyles
 import numpy as np
 from optparse import OptionParser
 from wrapper import DD_Budget
 from scipy.interpolate import interp1d, make_interp_spline, UnivariateSpline
 from scipy.ndimage.filters import gaussian_filter
-
-from collections import OrderedDict
-
-linestyles = OrderedDict(
-    [('solid',               (0, ())),
-     ('loosely dotted',      (0, (1, 10))),
-     ('dotted',              (0, (1, 5))),
-     ('densely dotted',      (0, (1, 1))),
-
-     ('loosely dashed',      (0, (5, 10))),
-     ('dashed',              (0, (5, 5))),
-     ('densely dashed',      (0, (5, 1))),
-
-     ('loosely dashdotted',  (0, (3, 10, 1, 10))),
-     ('dashdotted',          (0, (3, 5, 1, 5))),
-     ('densely dashdotted',  (0, (3, 1, 1, 1))),
-
-     ('loosely dashdotdotted', (0, (3, 10, 1, 10, 1, 10))),
-     ('dashdotdotted',         (0, (3, 5, 1, 5, 1, 5))),
-     ('densely dashdotdotted', (0, (3, 1, 1, 1, 1, 1)))])
 
 
 class CosmoData:

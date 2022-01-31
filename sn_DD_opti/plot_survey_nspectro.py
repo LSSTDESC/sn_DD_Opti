@@ -1,5 +1,5 @@
 import pandas as pd
-from __init__ import plt
+from __init__ import plt, linestyles
 import numpy as np
 from optparse import OptionParser
 import os
@@ -301,10 +301,21 @@ def plot_info(df, xvar='zcomp_dd', yvar='sigma_w', xleg='$z_{complete}^{DD}$', y
     ax.legend(ncol=3, frameon=False)
 
 
-def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sigma_w$'):
+def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sigma_w$',
+                   surveyName=['deep_rolling_early_0.80_0.60', 'deep_rolling_early_0.75_0.60', 'deep_rolling_early_0.70_0.60',
+                               'deep_rolling_ten_years_0.75_0.65', 'universal_0.00_0.65', ],
+                   plotName=['EDR$_{0.80}^{0.60}$', 'EDR$_{0.75}^{0.60}$',
+                             'EDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
+                   lls=['solid', linestyles['densely dashdotdotted'],
+                        'dashdot', 'dotted', 'dashed'],
+                   colors=['red', 'red', 'red', 'magenta', 'blue']):
 
+    corresp = dict(zip(surveyName, plotName))
+    ccolors = dict(zip(surveyName, colors))
+    ls = dict(zip(surveyName, lls))
     fig, ax = plt.subplots(figsize=(12, 8))
     fig.subplots_adjust(bottom=0.15)
+    """
     confPlot = ['deep_rolling_early_0.70_0.60',
                 'deep_rolling_early_0.75_0.60',
                 'deep_rolling_early_0.80_0.60',
@@ -315,23 +326,31 @@ def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sig
     #            'EDR$^3_{0.75}$', 'EDR$^3_{0.80}$', 'DU', 'DR$^{10Y}_{0.75}$']
     namePlot = ['EDR$_{0.70}^{0.60}$',
                 'EDR$_{0.75}^{0.60}$', 'EDR$_{0.80}^{0.60}$', 'DU$^{0.65}$', 'DR$_{0.75}^{0.65}$']
+
+    
+
+    
     corresp = dict(zip(confPlot, namePlot))
     markers = ['o', 's', '*', 'p', '>']
     mm = dict(zip(confPlot, markers))
-
-    for confName in confPlot:
+    """
+    for confName in surveyName:
         idx = df['confName'].str.contains(confName)
         sel = df[idx].to_records(index=False)
         sel = sel[sel[yvar] > 1.e-5]
-        print('aooo', sel[yvar], sel[xvar])
-        ax.plot(sel[xvar], sel[yvar], marker=mm[confName],
-                ls=lsty[confName], ms=15, label=corresp[confName], mfc='None')
+        sel = sel[sel[xvar] > 1.e-5]
+        if confName == 'deep_rolling_ten_years_0.75_0.65':
+            print('aooo', sel[yvar], sel[xvar])
+        ax.plot(sel[xvar], sel[yvar], marker='None',
+                ls=ls[confName], label=corresp[confName], color=ccolors[confName], lw=2)
 
     ax.grid()
     ax.set_xlabel(xleg)
     ax.set_ylabel(yleg)
-    ax.legend(ncol=3, frameon=False)
-    # ax.legend(bbox_to_anchor=(-0.3, 0.7), ncol=5, fontsize=12, frameon=False)
+    #ax.legend(ncol=3, frameon=False)
+    ax.legend(loc='upper left', bbox_to_anchor=(
+        0., 1.3), ncol=3, frameon=False)
+    fig.tight_layout()
 
 
 def plot_vs_nspectro(config, visitsDir, prefix_Nvisits, nspectro, cosmoDir):
@@ -403,17 +422,24 @@ if len(nspectro) > 1:
 else:
     df = load_Summary(config, cosmoDir, prefix_Nvisits, visitsDir, nspectro[0])
 
-    """
     plot_vs_budget(df, xvar='budget', yvar='nsn_DD',
                    xleg='budget', yleg='$N_{SN}$')
-    plot_vs_budget(df, xvar='budget', yvar='time',
-                   xleg='budget', yleg='Time budget [y]')
+    plot_vs_budget(df, yvar='budget', xvar='nsn_DD',
+                   yleg='budget', xleg='$N_{SN}$')
+
+    plot_vs_budget(df, yvar='time', xvar='budget',
+                   yleg='Time budget [year]', xleg='budget')
+    plot_vs_budget(df, xvar='time', yvar='budget',
+                   xleg='Time budget [year]', yleg='budget')
+
+    """
     plot_vs_budget(df, xvar='budget', yvar='sigma_w',
                    xleg='budget', yleg='$\sigma_w$')
-    """
+    
     print(df.columns)
     plot_info(df, xvar='zcomp_dd', yvar='sigma_w',
               xleg='$z_{complete}^{deep}$', yleg='$\sigma_w$', budget=budget)
+    """
     """
     plot_info(df, xvar='zcomp_dd', yvar='nsn_DD',
               xleg='$z_{complete}^{DD}$', yleg='$N_{SN}$', budget=budget)
