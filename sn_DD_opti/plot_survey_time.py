@@ -242,12 +242,21 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
     # for key, vals in df.items():
     for sName in surveyName:
         idx = df['confName'] == sName
-        vals = df[idx]
 
+        # get budget interpolator
+        interp_bud, interp_var = interp_budget(
+            df, xvar, yvar, None, None, smooth_it=False)
+        # get time budget=11%
+        ttime = interp_bud(0.11)
+        # remove points after ttime
+        idx &= df[xvar] <= ttime
+        vals = df[idx]
         if not smooth_it:
             ax.plot(vals[xvar], vals[yvar], marker='None',
                     label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=2)
 
+        xnew = None
+        spl_smooth = None
         if smooth_it:
             xmin, xmax = np.min(vals[xvar]), np.max(vals[xvar])
             xnew = np.linspace(xmin, xmax, 100)
@@ -260,14 +269,8 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                     label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=2)
 
         if len(tag_budget) > 0:
-            interp_bud = interp1d(
-                vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
-            if not smooth_it:
-                interp_var = interp1d(
-                    vals[xvar], vals[yvar], bounds_error=False, fill_value=0.)
-            if smooth_it:
-                interp_var = interp1d(
-                    xnew, spl_smooth, bounds_error=False, fill_value=0.)
+            interp_bud, interp_var = interp_budget(
+                vals, xvar, yvar, xnew, spl_smooth, smooth_it)
             for i, val in enumerate(tag_budget):
                 ttime = interp_bud(val)
                 valres = interp_var(ttime)
@@ -276,13 +279,28 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                 print('resu budget', val, xvar, ttime, yvar, valres)
 
     if xvar == 'year':
-        ax.set_xlim([0.9, 10.1])
+        print('eeeee', xvar)
+        ax.set_xlim([1., 6.])
     if yvar == 'sigma_w':
         ax.set_ylim([0.010, 0.05])
     ax.grid()
     ax.legend(ncol=3)
     ax.set_xlabel(legx)
     ax.set_ylabel(legy)
+
+
+def interp_budget(vals, xvar, yvar, xnew, ynew, smooth_it):
+
+    interp_bud = interp1d(
+        vals['budget'], vals[xvar], bounds_error=False, fill_value=0.)
+    if not smooth_it:
+        interp_var = interp1d(
+            vals[xvar], vals[yvar], bounds_error=False, fill_value=0.)
+    if smooth_it:
+        interp_var = interp1d(
+            xnew, ynew, bounds_error=False, fill_value=0.)
+
+    return interp_bud, interp_var
 
 
 def plot_syste(df, df_syste, xvar='year', yvar='sigma_w', yvartwin='', legx='Year', legy='$\sigma_w$', tag_budget=[], tag_marker=[], norm=False):
@@ -447,7 +465,10 @@ cDir = '{}_{}'.format(cosmoDir, nspectro)
 df = CosmoData(config, cDir, prefix_Nvisits, visitsDir).data
 
 print('hello', df['confName'])
+print(df.columns)
 plot(df, tag_budget=[0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+plot(df, yvar='nsn_DD', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 plt.show()
 
 """
