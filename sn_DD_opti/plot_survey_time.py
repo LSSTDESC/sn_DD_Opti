@@ -236,7 +236,7 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
     corresp = dict(zip(surveyName, plotName))
     print('all', corresp)
     ccolors = dict(zip(surveyName, colors))
-    fig, ax = plt.subplots(figsize=(15, 8))
+    fig, ax = plt.subplots(figsize=(12, 8))
     fig.suptitle(figtitle)
     ls = dict(zip(surveyName, lls))
     # for key, vals in df.items():
@@ -275,16 +275,17 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                 ttime = interp_bud(val)
                 valres = interp_var(ttime)
                 ax.plot(ttime, valres,
-                        marker=tag_marker[i], color='k', ms=5, markeredgewidth=2)
+                        marker=tag_marker[i], color='k', ms=7, markeredgewidth=2)
                 print('resu budget', val, xvar, ttime, yvar, valres)
 
     if xvar == 'year':
-        print('eeeee', xvar)
         ax.set_xlim([1., 6.])
     if yvar == 'sigma_w':
         ax.set_ylim([0.010, 0.05])
+    if yvar == 'detfom':
+        ax.set_ylim([40, None])
     ax.grid()
-    ax.legend(ncol=3)
+    ax.legend(ncol=3, frameon=False)
     ax.set_xlabel(legx)
     ax.set_ylabel(legy)
 
@@ -425,7 +426,7 @@ def plot_diff(df, ref=['deep_rolling_early', 'deep_rolling_ten_years', 'universa
                 # print('boo', refval, key)
                 ax.plot(df_ref[xvar], df_ref[yvar]-vals[yvar], label=key)
 
-    ax.legend()
+    ax.legend(frameon=False)
     ax.grid()
 
 
@@ -466,9 +467,32 @@ df = CosmoData(config, cDir, prefix_Nvisits, visitsDir).data
 
 print('hello', df['confName'])
 print(df.columns)
+"""
+df['detfomb'] = 1./(df['sigma_wp']*df['sigma_wa'])
+df['detfomb'] /= 6.17
+df['detfom'] /= 6.17
 plot(df, tag_budget=[0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
-plot(df, yvar='nsn_DD', tag_budget=[
+"""
+CL = 6.17
+df['detfom'] /= CL
+plot(df, yvar='detfom', legy='DET FoM [95$\%$ C.L.]', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+"""
+plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra}$', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+"""
+"""
+plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+plot(df, yvar='fom', legy='FoM', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+plot(df, yvar='detfom', legy='DetFoM', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+plot(df, yvar='detfomb', legy='DetFoMb', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+"""
 plt.show()
 
 """

@@ -314,7 +314,7 @@ def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sig
     ccolors = dict(zip(surveyName, colors))
     ls = dict(zip(surveyName, lls))
     fig, ax = plt.subplots(figsize=(12, 8))
-    fig.subplots_adjust(bottom=0.15)
+    fig.subplots_adjust(bottom=0.12, top=0.8)
     """
     confPlot = ['deep_rolling_early_0.70_0.60',
                 'deep_rolling_early_0.75_0.60',
@@ -350,7 +350,7 @@ def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sig
     #ax.legend(ncol=3, frameon=False)
     ax.legend(loc='upper left', bbox_to_anchor=(
         0., 1.3), ncol=3, frameon=False)
-    fig.tight_layout()
+    # fig.tight_layout()
 
 
 def plot_vs_nspectro(config, visitsDir, prefix_Nvisits, nspectro, cosmoDir):
@@ -422,13 +422,15 @@ if len(nspectro) > 1:
 else:
     df = load_Summary(config, cosmoDir, prefix_Nvisits, visitsDir, nspectro[0])
 
-    plot_vs_budget(df, xvar='budget', yvar='nsn_DD',
-                   xleg='budget', yleg='$N_{SN}$')
+    # plot_vs_budget(df, xvar='budget', yvar='nsn_DD',
+    #               xleg='budget', yleg='$N_{SN}$')
+
     plot_vs_budget(df, yvar='budget', xvar='nsn_DD',
                    yleg='budget', xleg='$N_{SN}$')
 
-    plot_vs_budget(df, yvar='time', xvar='budget',
-                   yleg='Time budget [year]', xleg='budget')
+    # plot_vs_budget(df, yvar='time', xvar='budget',
+    #                yleg='Time budget [year]', xleg='budget')
+
     plot_vs_budget(df, xvar='time', yvar='budget',
                    xleg='Time budget [year]', yleg='budget')
 
