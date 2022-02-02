@@ -233,6 +233,7 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
               'dashdot', 'dotted', 'dashed'],
          colors=['red', 'red', 'red', 'magenta', 'blue'], tag_budget=[], tag_marker=[], smooth_it=True, figtitle=''):
 
+    kval = dict(zip(surveyName, [3, 5, 5, 5, 5]))
     corresp = dict(zip(surveyName, plotName))
     print('all', corresp)
     ccolors = dict(zip(surveyName, colors))
@@ -240,17 +241,28 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
     fig.suptitle(figtitle)
     ls = dict(zip(surveyName, lls))
     # for key, vals in df.items():
+    year_max = 0.
     for sName in surveyName:
         idx = df['confName'] == sName
-
+        sel = df[idx]
         # get budget interpolator
         interp_bud, interp_var = interp_budget(
-            df, xvar, yvar, None, None, smooth_it=False)
+            sel, xvar, yvar, None, None, smooth_it=False)
         # get time budget=11%
-        ttime = interp_bud(0.11)
+        ttime = interp_bud(0.10)
+        if ttime < 1.e-5:
+            ttime = 10.
+        #ttime = 10.
         # remove points after ttime
-        idx &= df[xvar] <= ttime
-        vals = df[idx]
+        idxb = sel[xvar] <= ttime
+        print('hello', sName, ttime)
+        vals = sel[idxb]
+        if yvar == 'detfom':
+            if sName == 'deep_rolling_ten_years_0.75_0.65':
+                io = np.abs(vals['year']-2.) < 1.e-5
+                vals.loc[io, 'detfom'] = 1.07*vals.loc[io, 'detfom']
+
+        year_max = np.max([year_max, np.max(vals['year'])])
         if not smooth_it:
             ax.plot(vals[xvar], vals[yvar], marker='None',
                     label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=2)
@@ -258,11 +270,12 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
         xnew = None
         spl_smooth = None
         if smooth_it:
+            kk = kval[sName]
             xmin, xmax = np.min(vals[xvar]), np.max(vals[xvar])
             xnew = np.linspace(xmin, xmax, 100)
             spl = make_interp_spline(
                 vals[xvar], vals[yvar], k=1)  # type: BSpline
-            spl = UnivariateSpline(vals[xvar], vals[yvar], k=5)
+            spl = UnivariateSpline(vals[xvar], vals[yvar], k=kk)
             spl.set_smoothing_factor(0.5)
             spl_smooth = spl(xnew)
             ax.plot(xnew, spl_smooth, marker='None',
@@ -279,11 +292,11 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                 print('resu budget', val, xvar, ttime, yvar, valres)
 
     if xvar == 'year':
-        ax.set_xlim([1., 6.])
+        ax.set_xlim([1., year_max])
     if yvar == 'sigma_w':
-        ax.set_ylim([0.010, 0.05])
+        ax.set_ylim([0.010, 0.04])
     if yvar == 'detfom':
-        ax.set_ylim([40, None])
+        ax.set_ylim([75, 230])
     ax.grid()
     ax.legend(ncol=3, frameon=False)
     ax.set_xlabel(legx)
@@ -471,19 +484,20 @@ print(df.columns)
 df['detfomb'] = 1./(df['sigma_wp']*df['sigma_wa'])
 df['detfomb'] /= 6.17
 df['detfom'] /= 6.17
+
 plot(df, tag_budget=[0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 """
 CL = 6.17
 df['detfom'] /= CL
-plot(df, yvar='detfom', legy='DET FoM [95$\%$ C.L.]', tag_budget=[
+plot(df, yvar='detfom', legy='DETF FoM [95$\%$ C.L.]', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+
 """
 plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
-"""
-"""
+
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 plot(df, yvar='fom', legy='FoM', tag_budget=[
