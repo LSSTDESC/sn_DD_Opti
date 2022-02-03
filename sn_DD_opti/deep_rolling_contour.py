@@ -471,7 +471,7 @@ def plotContourBudget_deprecated(zfields, fDir,
     ax.set_ylabel('\mathrm{$z_{complete}$}')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     """
-    figb, axb = plt.subplots(figsize=(10, 8))
+    figb, axb = plt.subplots(figsize=(12, 8))
     figb.subplots_adjust(top=0.85)
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
@@ -491,7 +491,7 @@ def plotContourBudget_deprecated(zfields, fDir,
         axb.set_xlabel('Number of deep fields$_{\mathrm{'+str(nseasons)+'}}$')
     axb.set_ylabel('$z_{\mathrm{complete}}$')
     axb.xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.show()
+    # plt.show()
 
 
 def plotContour_deprecated(ax, zfields, fDir, fName,
@@ -613,7 +613,7 @@ def plotContour_deprecated(ax, zfields, fDir, fName,
 def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
                       yaxis='zcomp_ultra_unique', Ny=20):
 
-    fig, ax = plt.subplots(figsize=(15, 10))
+    fig, ax = plt.subplots(figsize=(12, 8))
     fig.subplots_adjust(top=0.85, left=0.15)
 
     trans = dict(zip(['ADFS', 'CDFS', 'ELAIS'], [
@@ -724,7 +724,7 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     ax.set_ylabel('\mathrm{$z_{complete}$}')
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     """
-    figb, axb = plt.subplots(figsize=(10, 8))
+    figb, axb = plt.subplots(figsize=(12, 8))
     figb.subplots_adjust(top=0.85)
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
@@ -744,7 +744,7 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
         axb.set_xlabel('Number of deep fields$_{\mathrm{'+str(nseasons)+'}}$')
     axb.set_ylabel('$z_{\mathrm{complete}}$')
     axb.xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.show()
+    # plt.show()
 
 
 def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='nddf_dd', yaxis='zcomp_ultra_unique'):
@@ -808,6 +808,7 @@ def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='ndd
 
     ccol = 'lightgreen'
     #ccol = 'ghostwhite'
+    ccol = 'white'
     cmap = (mpl.colors.ListedColormap(
         [ccol]))
 
