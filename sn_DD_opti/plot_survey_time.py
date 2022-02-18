@@ -7,6 +7,18 @@ from scipy.interpolate import interp1d, make_interp_spline, UnivariateSpline
 from scipy.ndimage.filters import gaussian_filter
 
 
+def smooth_It(vals, xvar, yvar):
+
+    xmin, xmax = np.min(vals[xvar]), np.max(vals[xvar])
+    xnew = np.linspace(xmin, xmax, 100)
+    spl = make_interp_spline(
+        vals[xvar], vals[yvar], k=1)  # type: BSpline
+    spl = UnivariateSpline(vals[xvar], vals[yvar], k=kk)
+    spl.set_smoothing_factor(0.5)
+    spl_smooth = spl(xnew)
+    return xnew, spl_smooth
+
+
 class CosmoData:
     def __init__(self, config, cosmoDir='cosmo_files_yearly',
                  prefix_Nvisits='Nvisits_z_-2.0_0.2_error_model_ebvofMW_0.0_nvisits_Ny',
@@ -238,10 +250,12 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
     print('all', corresp)
     ccolors = dict(zip(surveyName, colors))
     fig, ax = plt.subplots(figsize=(12, 8))
-    fig.suptitle(figtitle)
+    fig.subplots_adjust(bottom=0.12, top=0.8)
+    # fig.suptitle(figtitle)
     ls = dict(zip(surveyName, lls))
     # for key, vals in df.items():
     year_max = 0.
+    rbudget = []
     for sName in surveyName:
         idx = df['confName'] == sName
         sel = df[idx]
@@ -290,17 +304,52 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                 ax.plot(ttime, valres,
                         marker=tag_marker[i], color='k', ms=7, markeredgewidth=2)
                 print('resu budget', val, xvar, ttime, yvar, valres)
+                rbudget.append(
+                    (sName, corresp[sName], val, valres.tolist(), ttime.tolist()))
 
     if xvar == 'year':
         ax.set_xlim([1., year_max])
     if yvar == 'sigma_w':
         ax.set_ylim([0.010, 0.04])
     if yvar == 'detfom':
-        ax.set_ylim([75, 230])
+        ax.set_ylim([75, 160])
+    """
+    if yvar == 'nsn_dd':
+        ax.set_yscale('log')
+    """
     ax.grid()
-    ax.legend(ncol=3, frameon=False)
+    #ax.legend(ncol=3, frameon=False)
+    ax.legend(loc='upper left', bbox_to_anchor=(
+        0., 1.3), ncol=3, frameon=False)
     ax.set_xlabel(legx)
     ax.set_ylabel(legy)
+
+    if len(rbudget) > 0:
+        print(rbudget)
+        res = np.rec.fromrecords(
+            rbudget, names=['confName', 'plotName', 'budget', yvar, 'time'])
+        plot_summary(res, yvar, legy, tag_budget, tag_marker)
+
+
+def plot_summary(res, yvar, legy, tag_budget=[], tag_marker=[]):
+
+    fig, ax = plt.subplots(figsize=(12, 8))
+    fig.subplots_adjust(bottom=0.12, top=0.8)
+    res.sort(order=yvar)
+    ls = ['solid', 'dashed']
+    for i, val in enumerate(tag_budget):
+        idx = res['budget'] == val
+        idx &= res[yvar] > 0.
+        sel = res[idx]
+        ax.plot(sel['plotName'], sel[yvar], marker=tag_marker[i], ls=ls[i],
+                color='r', markerfacecolor='k', ms=10, markeredgewidth=0, lw=2, label='DD budget = {}'.format(np.round(val, 2)))
+
+    ax.grid()
+    ax.set_ylabel(legy)
+    ax.set_xlabel('Observing Strategy')
+    # ax.legend(frameon=False)
+    ax.legend(loc='upper left', bbox_to_anchor=(
+        0., 1.15), ncol=2, frameon=False)
 
 
 def interp_budget(vals, xvar, yvar, xnew, ynew, smooth_it):
@@ -460,7 +509,10 @@ parser.add_option('--nspectro', type='str', default='200',
                   help='nspectro tag [%default]')
 parser.add_option('--figtitle', type='str', default='$N_{host}^{spectro}$=200/year',
                   help='plot title [%default]')
-
+parser.add_option('--var_to_plot', type='str', default='sigma_w',
+                  help='variable to plot [%default]')
+parser.add_option('--legy', type='str', default='$\sigma_{w}$',
+                  help='legy for var_to_plot[%default]')
 
 opts, args = parser.parse_args()
 
@@ -473,6 +525,8 @@ config = opts.config
 nspectro = opts.nspectro
 config = opts.config
 figtitle = opts.figtitle
+var_to_plot = opts.var_to_plot
+legy = opts.legy
 
 # get the data
 cDir = '{}_{}'.format(cosmoDir, nspectro)
@@ -488,10 +542,20 @@ df['detfom'] /= 6.17
 plot(df, tag_budget=[0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 """
 CL = 6.17
-df['detfom'] /= CL
+if 'detfom' in df.columns:
+    df['detfom'] /= CL
+smooth_It = True
+if 'nsn' in var_to_plot:
+    smooth_It = False
+#smooth_It = True
+plot(df, yvar=var_to_plot, legy=legy, tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], smooth_it=smooth_It, figtitle=figtitle)
+"""
 plot(df, yvar='detfom', legy='DETF FoM [95$\%$ C.L.]', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
-
+plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+"""
 """
 plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
