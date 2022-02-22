@@ -335,6 +335,7 @@ def plot_summary(res, yvar, legy, tag_budget=[], tag_marker=[]):
 
     fig, ax = plt.subplots(figsize=(12, 8))
     fig.subplots_adjust(bottom=0.12, top=0.8)
+    # res[::-1].sort(order=yvar)
     res.sort(order=yvar)
     ls = ['solid', 'dashed']
     for i, val in enumerate(tag_budget):
@@ -347,6 +348,7 @@ def plot_summary(res, yvar, legy, tag_budget=[], tag_marker=[]):
     ax.grid()
     ax.set_ylabel(legy)
     ax.set_xlabel('Observing Strategy')
+    ax.xaxis.set_tick_params(labelsize=23)
     # ax.legend(frameon=False)
     ax.legend(loc='upper left', bbox_to_anchor=(
         0., 1.15), ncol=2, frameon=False)
