@@ -606,7 +606,7 @@ def plotContour_deprecated(ax, zfields, fDir, fName,
         fmt[l] = s
     ax.clabel(CSb, inline=True, fontsize=fontsize,
               colors='r', fmt=fmt)
-    ax.grid(alpha=0.3)
+    # ax.grid(alpha=0.3)
     ax.set_ylim([zmin, zmax])
 
 
@@ -637,7 +637,8 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     else:
         # at least two DD ultra fields required
         if xaxis == 'nseasons_ultra_unique':
-            tt = 'Early Deep Rolling survey'
+            #tt = 'Early Deep Rolling survey'
+            tt = 'Intensive Deep Rolling survey'
         runtype = 'deep_rolling'
         idx = cosmo_res['nddf_ultra'] >= 2
         cosmo_res = cosmo_res[idx]
@@ -877,7 +878,8 @@ def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='ndd
         fmt[l] = s
     ax.clabel(CSb, inline=True, fontsize=fontsize,
               colors='r', fmt=fmt)
-    ax.grid(alpha=0.3)
+    # ax.grid(alpha=0.6)
+    ax.grid()
     ax.set_ylim([zmin, zmax])
 
 

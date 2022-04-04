@@ -239,8 +239,10 @@ def add_infos(df):
 def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
          surveyName=['deep_rolling_early_0.80_0.60', 'deep_rolling_early_0.75_0.60', 'deep_rolling_early_0.70_0.60',
                      'deep_rolling_ten_years_0.75_0.65', 'universal_0.00_0.65', ],
-         plotName=['EDR$_{0.80}^{0.60}$', 'EDR$_{0.75}^{0.60}$',
-                   'EDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
+         # plotName=['EDR$_{0.80}^{0.60}$', 'EDR$_{0.75}^{0.60}$',
+         #          'EDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
+         plotName=['IDR$_{0.80}^{0.60}$', 'IDR$_{0.75}^{0.60}$',
+                   'IDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
          lls=['solid', linestyles['densely dashdotdotted'],
               'dashdot', 'dotted', 'dashed'],
          colors=['red', 'red', 'red', 'magenta', 'blue'], tag_budget=[], tag_marker=[], smooth_it=True, figtitle=''):
@@ -342,6 +344,9 @@ def plot_summary(res, yvar, legy, tag_budget=[], tag_marker=[]):
         idx = res['budget'] == val
         idx &= res[yvar] > 0.
         sel = res[idx]
+        print('there man', yvar)
+        if yvar == 'sigma_w':
+            sel = sel[::-1]
         ax.plot(sel['plotName'], sel[yvar], marker=tag_marker[i], ls=ls[i],
                 color='r', markerfacecolor='k', ms=10, markeredgewidth=0, lw=2, label='DD budget = {}'.format(np.round(val, 2)))
 
@@ -550,6 +555,8 @@ smooth_It = True
 if 'nsn' in var_to_plot:
     smooth_It = False
 #smooth_It = True
+
+fig. 20 and 21
 plot(df, yvar=var_to_plot, legy=legy, tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], smooth_it=smooth_It, figtitle=figtitle)
 """
@@ -558,12 +565,15 @@ plot(df, yvar='detfom', legy='DETF FoM [95$\%$ C.L.]', tag_budget=[
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 """
+# fig. 19
 """
-plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra}$', tag_budget=[
-     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
+smooth_It = False
+plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra-deep}$', tag_budget=[
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle, smooth_it=smooth_It)
 plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
-     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
-
+     0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle, smooth_it=smooth_It)
+"""
+"""
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 plot(df, yvar='fom', legy='FoM', tag_budget=[

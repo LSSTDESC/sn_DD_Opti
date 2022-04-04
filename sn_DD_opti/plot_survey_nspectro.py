@@ -304,8 +304,8 @@ def plot_info(df, xvar='zcomp_dd', yvar='sigma_w', xleg='$z_{complete}^{DD}$', y
 def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sigma_w$',
                    surveyName=['deep_rolling_early_0.80_0.60', 'deep_rolling_early_0.75_0.60', 'deep_rolling_early_0.70_0.60',
                                'deep_rolling_ten_years_0.75_0.65', 'universal_0.00_0.65', ],
-                   plotName=['EDR$_{0.80}^{0.60}$', 'EDR$_{0.75}^{0.60}$',
-                             'EDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
+                   plotName=['IDR$_{0.80}^{0.60}$', 'IDR$_{0.75}^{0.60}$',
+                             'IDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
                    lls=['solid', linestyles['densely dashdotdotted'],
                         'dashdot', 'dotted', 'dashed'],
                    colors=['red', 'red', 'red', 'magenta', 'blue']):
@@ -350,6 +350,7 @@ def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sig
     #ax.legend(ncol=3, frameon=False)
     ax.legend(loc='upper left', bbox_to_anchor=(
         0., 1.3), ncol=3, frameon=False)
+    ax.set_ylim([0.03, None])
     # fig.tight_layout()
 
 
