@@ -619,6 +619,7 @@ def plotContourBudget_new(cosmo_res, toplot=['nsn_DD', 'sigma_w'], xaxis='nseaso
     trans = dict(zip(['ADFS', 'CDFS', 'ELAIS'], [
                  'Euclid/Roman', 'CDFS', 'ELAIS']))
     tt = 'Deep Rolling 10 Years survey'
+    tt = 'DR$_{\mathrm{10 Years}}$ survey'
     #plotName = '{}_deep_rolling_all.png'.format(toplot)
     plotName = '{}_{}_deep_rolling_all.png'.format(toplot[0], toplot[1])
     # check the type of run in cosmo_res file
@@ -633,6 +634,7 @@ def plotContourBudget_new(cosmo_res, toplot=['nsn_DD', 'sigma_w'], xaxis='nseaso
     print('hello here', nddf_ultra)
     if nddf_ultra < 1:
         tt = 'Deep Universal survey'
+        tt = 'DU survey'
         runtype = 'universal'
         #plotName = '{}_deep_universal.png'.format(toplot)
         plotName = '{}_{}_deep_universal.png'.format(toplot[0], toplot[1])
@@ -681,10 +683,10 @@ def plotContourBudget_new(cosmo_res, toplot=['nsn_DD', 'sigma_w'], xaxis='nseaso
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
     # tot_tit += '\n  {}'.format(nvisitsy)
     print('alors', xaxis, tt, tt.count('Universal'))
-    if xaxis == 'nddf_dd' and tt.count('Universal') == 0:
+    if xaxis == 'nddf_dd' and tt.count('DU') == 0:
         tot_tit += ' - {}'.format(leg)
     else:
-        if tt.count('Universal') == 0:
+        if tt.count('DU') == 0:
             tot_tit += ' - {}'.format(legb)
     #fig.suptitle(tot_tit, x=0.325, color='magenta')
     fig.suptitle(tot_tit, color='magenta')
