@@ -475,7 +475,7 @@ def plotContourBudget_deprecated(zfields, fDir,
     figb.subplots_adjust(top=0.85)
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
-    tot_tit += '\n  {}'.format(nvisitsy)
+    # tot_tit += '\n  {}'.format(nvisitsy)
     if zfields:
         tot_tit += ' - {}'.format(leg)
     figb.suptitle(tot_tit)
@@ -610,16 +610,17 @@ def plotContour_deprecated(ax, zfields, fDir, fName,
     ax.set_ylim([zmin, zmax])
 
 
-def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
-                      yaxis='zcomp_ultra_unique', Ny=20):
+def plotContourBudget_new(cosmo_res, toplot=['nsn_DD', 'sigma_w'], xaxis='nseasons_ultra_unique',
+                          yaxis='zcomp_ultra_unique', Ny=20, plot_legend=False):
 
-    fig, ax = plt.subplots(figsize=(12, 8))
-    fig.subplots_adjust(top=0.85, left=0.15)
+    fig, ax = plt.subplots(figsize=(18, 7), ncols=2)
+    fig.subplots_adjust(top=0.90, left=0.15, right=0.8)
 
     trans = dict(zip(['ADFS', 'CDFS', 'ELAIS'], [
                  'Euclid/Roman', 'CDFS', 'ELAIS']))
     tt = 'Deep Rolling 10 Years survey'
-    plotName = '{}_deep_rolling_all.png'.format(toplot)
+    #plotName = '{}_deep_rolling_all.png'.format(toplot)
+    plotName = '{}_{}_deep_rolling_all.png'.format(toplot[0], toplot[1])
     # check the type of run in cosmo_res file
     nddf_ultra = np.mean(cosmo_res['nddf_ultra'])
     leg = ''
@@ -633,12 +634,14 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     if nddf_ultra < 1:
         tt = 'Deep Universal survey'
         runtype = 'universal'
-        plotName = '{}_deep_universal.png'.format(toplot)
+        #plotName = '{}_deep_universal.png'.format(toplot)
+        plotName = '{}_{}_deep_universal.png'.format(toplot[0], toplot[1])
     else:
         # at least two DD ultra fields required
         if xaxis == 'nseasons_ultra_unique':
-            #tt = 'Early Deep Rolling survey'
-            tt = 'Intensive Deep Rolling survey'
+            # tt = 'Early Deep Rolling survey'
+            # tt = 'Intensive Deep Rolling survey'
+            tt = 'IDR survey'
         runtype = 'deep_rolling'
         idx = cosmo_res['nddf_ultra'] >= 2
         cosmo_res = cosmo_res[idx]
@@ -649,8 +652,10 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
         seasons_dd = np.unique(cosmo_res['nseasons_dd'])[0]
         zcomp_dd = np.unique(cosmo_res['zcomp_dd'])[0]
         if xaxis == 'nseasons_ultra_unique':
-            plotName = '{}_deep_rolling_early_{}.png'.format(
-                toplot, str(np.mean(zcomp_dd)).replace('.', ''))
+            # plotName = '{}_deep_rolling_early_{}.png'.format(
+            #    toplot, str(np.mean(zcomp_dd)).replace('.', ''))
+            plotName = '{}_{}_deep_rolling_early_{}.png'.format(
+                toplot[0], toplot[1], str(np.mean(zcomp_dd)).replace('.', ''))
         print('aoooooooo', ddf_dd, 'jj', np.unique(cosmo_res['ddf_dd']))
         ddf_dd_new = {}
         for ii, vv in enumerate(ddf_dd):
@@ -674,33 +679,44 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     nseasons_dd = np.unique(cosmo_res['nseasons_dd_unique'].astype(int))[0]
     tot_tit = tt
     nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
-    tot_tit += '\n  {}'.format(nvisitsy)
+    # tot_tit += '\n  {}'.format(nvisitsy)
     print('alors', xaxis, tt, tt.count('Universal'))
     if xaxis == 'nddf_dd' and tt.count('Universal') == 0:
         tot_tit += ' - {}'.format(leg)
     else:
         if tt.count('Universal') == 0:
             tot_tit += ' - {}'.format(legb)
-    fig.suptitle(tot_tit)
-    plotContour(ax, cosmo_res, var=toplot,
-                runtype=runtype, xaxis=xaxis, yaxis=yaxis)
+    #fig.suptitle(tot_tit, x=0.325, color='magenta')
+    fig.suptitle(tot_tit, color='magenta')
+    for i, vv in enumerate(toplot):
+        plotContour(ax[i], cosmo_res, var=vv,
+                    runtype=runtype, xaxis=xaxis, yaxis=yaxis, plot_legend=plot_legend)
 
     if xaxis == 'nddf_dd':
-        ax.set_xlabel(
-            'Number of deep fields$_{\mathrm{'+str(nseasons_dd)+'}}$')
+        for i in range(1):
+            ax[i].set_xlabel(
+                'Number of deep fields$_{\mathrm{'+str(nseasons_dd)+'}}$')
+            ax[i].xaxis.set_label_coords(1., -.075)
     if xaxis == 'nseasons_ultra_unique':
-        ax.set_xlabel('N$_{\mathrm{seasons}}$ per ultra-deep field')
-
+        for i in range(1):
+            ax[i].set_xlabel(
+                'N$_{\mathrm{seasons}}$ per ultra-deep field')
+            ax[i].xaxis.set_label_coords(1., -.075)
     if yaxis == 'zcomp_dd_unique':
-        ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{deep}}$')
-
+        for i in range(1):
+            ax[i].set_ylabel('$z_{\mathrm{complete}}^{\mathrm{deep}}$')
+            ax[i].xaxis.set_label_coords(1., -.075)
     if yaxis == 'zcomp_ultra_unique':
-        ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{ultra-deep}}$')
+        for i in range(1):
+            ax[i].set_ylabel('$z_{\mathrm{complete}}^{\mathrm{ultra-deep}}$')
 
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    plt.savefig(plotName, dpi=fig.dpi)
-    # plt.show()
+    ax[1].get_yaxis().set_ticklabels([])
 
+    for i in range(2):
+        ax[i].xaxis.set_major_locator(MaxNLocator(integer=True))
+    #plt.savefig(plotName, dpi=fig.dpi)
+    plt.subplots_adjust(wspace=0.04)
+    plt.show()
     return None
     # fig, ax = plt.subplots(nrows=2, figsize=(6, 8))
 
@@ -748,7 +764,102 @@ def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
     # plt.show()
 
 
-def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='nddf_dd', yaxis='zcomp_ultra_unique'):
+def plotContourBudget(cosmo_res, toplot='nsn_DD', xaxis='nseasons_ultra_unique',
+                      yaxis='zcomp_ultra_unique', Ny=20):
+
+    fig, ax = plt.subplots(figsize=(12, 8))
+    fig.subplots_adjust(top=0.85, left=0.15)
+
+    trans = dict(zip(['ADFS', 'CDFS', 'ELAIS'], [
+                 'Euclid/Roman', 'CDFS', 'ELAIS']))
+    tt = 'Deep Rolling 10 Years survey'
+    plotName = '{}_deep_rolling_all.png'.format(toplot)
+    # check the type of run in cosmo_res file
+    nddf_ultra = np.mean(cosmo_res['nddf_ultra'])
+    leg = ''
+    legb = ''
+    print(cosmo_res.columns)
+    # at least one dd field requested
+    idx = cosmo_res['nddf_dd'] >= 1
+    cosmo_res = cosmo_res[idx]
+
+    print('hello here', nddf_ultra)
+    if nddf_ultra < 1:
+        tt = 'Deep Universal survey'
+        runtype = 'universal'
+        plotName = '{}_deep_universal.png'.format(toplot)
+    else:
+        # at least two DD ultra fields required
+        if xaxis == 'nseasons_ultra_unique':
+            # tt = 'Early Deep Rolling survey'
+            # tt = 'Intensive Deep Rolling survey'
+            tt = 'IDR survey'
+        runtype = 'deep_rolling'
+        idx = cosmo_res['nddf_ultra'] >= 2
+        cosmo_res = cosmo_res[idx]
+        ddf_ultra = np.unique(cosmo_res['ddf_ultra'])[0]
+        seasons_ultra = np.unique(cosmo_res['nseasons_ultra'])[0]
+        zcomp_ultra = np.unique(cosmo_res['zcomp_ultra'])[0]
+        ddf_dd = np.unique(cosmo_res['ddf_dd'])[0]
+        seasons_dd = np.unique(cosmo_res['nseasons_dd'])[0]
+        zcomp_dd = np.unique(cosmo_res['zcomp_dd'])[0]
+        if xaxis == 'nseasons_ultra_unique':
+            plotName = '{}_deep_rolling_early_{}.png'.format(
+                toplot, str(np.mean(zcomp_dd)).replace('.', ''))
+        print('aoooooooo', ddf_dd, 'jj', np.unique(cosmo_res['ddf_dd']))
+        ddf_dd_new = {}
+        for ii, vv in enumerate(ddf_dd):
+            if vv not in ddf_dd_new.keys():
+                ddf_dd_new[vv] = {}
+                ddf_dd_new[vv]['nseasons'] = []
+                ddf_dd_new[vv]['zcomp'] = []
+
+            ddf_dd_new[vv]['nseasons'].append(seasons_dd[ii])
+            ddf_dd_new[vv]['zcomp'].append(zcomp_dd[ii])
+
+        if len(ddf_ultra) == len(seasons_ultra):
+            for i in range(len(ddf_ultra)):
+                leg += ddf_ultra[i] + \
+                    '$_{'+str(seasons_ultra[i])+'}^{'+str(zcomp_ultra[i])+'}$'
+        for key, vals in ddf_dd_new.items():
+            legb += trans[key] + \
+                '$_{'+str(np.sum(vals['nseasons'])) + \
+                '}^{'+str(np.median(vals['zcomp']))+'}$'
+
+    nseasons_dd = np.unique(cosmo_res['nseasons_dd_unique'].astype(int))[0]
+    tot_tit = tt
+    nvisitsy = 'N$_{\mathrm{visits}}^{y} \leq $'+str(Ny)
+    # tot_tit += '\n  {}'.format(nvisitsy)
+    print('alors', xaxis, tt, tt.count('Universal'))
+    if xaxis == 'nddf_dd' and tt.count('Universal') == 0:
+        tot_tit += ' - {}'.format(leg)
+    else:
+        if tt.count('Universal') == 0:
+            tot_tit += ' - {}'.format(legb)
+    fig.suptitle(tot_tit)
+    plotContour(ax, cosmo_res, var=toplot,
+                runtype=runtype, xaxis=xaxis, yaxis=yaxis)
+
+    if xaxis == 'nddf_dd':
+        ax.set_xlabel(
+            'Number of deep fields$_{\mathrm{'+str(nseasons_dd)+'}}$')
+    if xaxis == 'nseasons_ultra_unique':
+        ax.set_xlabel('N$_{\mathrm{seasons}}$ per ultra-deep field')
+
+    if yaxis == 'zcomp_dd_unique':
+        ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{deep}}$')
+
+    if yaxis == 'zcomp_ultra_unique':
+        ax.set_ylabel('$z_{\mathrm{complete}}^{\mathrm{ultra-deep}}$')
+
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    plt.savefig(plotName, dpi=fig.dpi)
+    # plt.show()
+
+    return None
+
+
+def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='nddf_dd', yaxis='zcomp_ultra_unique', plot_legend=False):
     """
     Method to get results from the DDF_Scenario class
 
@@ -808,7 +919,7 @@ def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='ndd
     print('bud', BUD)
 
     ccol = 'lightgreen'
-    #ccol = 'ghostwhite'
+    # ccol = 'ghostwhite'
     ccol = 'white'
     cmap = (mpl.colors.ListedColormap(
         [ccol]))
@@ -869,7 +980,13 @@ def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='ndd
     # CSb = ax.contour(NDDF, ZLIMITB, gaussian_filter(
     #    ZVAR, sigma=3), zzv, colors='r')
     ZVAR = gaussian_filter(ZVAR, sigma=3)
-    CSb = ax.contour(NDDF, ZLIMITB, ZVAR, zzv, colors='r', linestyles='dashed')
+    color = 'r'
+    ls = 'dashed'
+    if var == 'sigma_w':
+        color = 'b'
+        ls = 'dotted'
+    CSb = ax.contour(NDDF, ZLIMITB, ZVAR, zzv,
+                     colors=color, linestyles=ls, label=var)
     print(ZVAR)
     print(ZLIMITB)
     print(NDDF)
@@ -877,10 +994,36 @@ def plotContour(ax, cosmo_res, var='sigma_w', runtype='deep_rolling', xaxis='ndd
     for l, s in zip(CSb.levels, strs):
         fmt[l] = s
     ax.clabel(CSb, inline=True, fontsize=fontsize,
-              colors='r', fmt=fmt)
+              colors=color, fmt=fmt)
     # ax.grid(alpha=0.6)
     ax.grid()
     ax.set_ylim([zmin, zmax])
+    """
+    plt.axhline(0.88, xmin=0.6, xmax=0.7,
+                linestyle='dashed', color='r', label='toto', alpha=0)
+
+    ax.annotate('toto', xy=(0.6, 1.02), xycoords='axes fraction',
+                xytext=(0.6, 1.03), arrowprops=dict(arrowstyle="-", color='b'))
+    """
+    """
+    if var == 'nsn_DD':
+        ax.plot([4, 5], [12., 12.], linestyle='dashed',
+                color='r', label='$N_{SN}$')
+        ax.plot([4, 5], [12., 12.], color='k', label='DD budget')
+        ax.plot([4, 5], [12., 12.], linestyle='dotted',
+                color='b', label='$\sigma_w$')
+        ax.legend(bbox_to_anchor=(0.3, 1.13),
+                  loc='upper left', ncol=3, frameon=False)
+    """
+    if var == 'sigma_w' and plot_legend:
+        vv = np.min(cosmo_res[xaxis])
+        ax.plot([vv, vv+1], [12., 12.], linestyle='dashed',
+                color='r', label='$N_{SN}$')
+        ax.plot([vv, vv+1], [12., 12.], color='k', label='DD budget')
+        ax.plot([vv, vv+1], [12., 12.], linestyle='dotted',
+                color='b', label='$\sigma_w$')
+        ax.legend(bbox_to_anchor=(0.97, 0.65),
+                  loc='upper left', ncol=1, frameon=False, fontsize=22)
 
 
 def getVals(res, varx='zcomp', vary='sigma_w', varz='nddf', nbins=800, method='linear'):
@@ -926,7 +1069,7 @@ parser.add_option('--nDD_max', type=int, default=4,
 """
 parser.add_option('--Ny', type=int, default=20,
                   help='max number of y-band visits [%default]')
-parser.add_option('--var_to_plot', type='str', default='sigma_w',
+parser.add_option('--var_to_plot', type='str', default='nsn_DD,sigma_w',
                   help='var to plot in addition to the budget (sigma_w,nsn_DD) [%default]')
 parser.add_option('--xaxis', type='str', default='nddf_dd',
                   help='xaxis var (nddf,nseasons_ultra) [%default]')
@@ -934,6 +1077,8 @@ parser.add_option('--yaxis', type='str', default='zcomp_dd_unique',
                   help='xaxis var (nddf,nseasons_ultra) [%default]')
 parser.add_option('--cosmoFile', type='str', default='cosmoSN_deep_rolling_0.80_0.80_2_2',
                   help='cosmo file to process[%default]')
+parser.add_option('--plot_legend', type=int, default=0,
+                  help='to plot the legend or not [%default]')
 
 opts, args = parser.parse_args()
 
@@ -947,7 +1092,7 @@ visitsDir = opts.visitsDir
 Ny = opts.Ny
 xaxis = opts.xaxis
 yaxis = opts.yaxis
-var_to_plot = opts.var_to_plot
+var_to_plot = opts.var_to_plot.split(',')
 
 # load cosmo results
 cosmoName = '{}/{}.hdf5'.format(opts.cosmoDir, opts.cosmoFile)
@@ -966,8 +1111,9 @@ budget = DD_Budget(visitsDir, fName)
 # add budget colmuns
 cosmo_res = budget(cosmo_res)
 
-plotContourBudget(cosmo_res, toplot=var_to_plot,
-                  xaxis=xaxis, yaxis=yaxis, Ny=opts.Ny)
+print('to plot', var_to_plot)
+plotContourBudget_new(cosmo_res, toplot=var_to_plot,
+                      xaxis=xaxis, yaxis=yaxis, Ny=opts.Ny, plot_legend=opts.plot_legend)
 
 """
 zfields = {}
