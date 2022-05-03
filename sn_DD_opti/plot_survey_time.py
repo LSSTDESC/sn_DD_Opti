@@ -236,7 +236,7 @@ def add_infos(df):
 """
 
 
-def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
+def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
          surveyName=['deep_rolling_early_0.80_0.60', 'deep_rolling_early_0.75_0.60', 'deep_rolling_early_0.70_0.60',
                      'deep_rolling_ten_years_0.75_0.65', 'universal_0.00_0.65', ],
          # plotName=['EDR$_{0.80}^{0.60}$', 'EDR$_{0.75}^{0.60}$',
@@ -245,14 +245,14 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                    'IDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
          lls=['solid', linestyles['densely dashdotdotted'],
               'dashdot', 'dotted', 'dashed'],
-         colors=['red', 'red', 'red', 'magenta', 'blue'], tag_budget=[], tag_marker=[], smooth_it=True, figtitle=''):
+         colors=['red', 'red', 'red', 'magenta', 'blue'], tag_budget=[], tag_marker=[], smooth_it=True, figtitle='', noxaxis=False, nolegend=False):
 
     kval = dict(zip(surveyName, [3, 5, 5, 5, 5]))
     corresp = dict(zip(surveyName, plotName))
     print('all', corresp)
     ccolors = dict(zip(surveyName, colors))
-    fig, ax = plt.subplots(figsize=(12, 8))
-    fig.subplots_adjust(bottom=0.12, top=0.8)
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    #fig.subplots_adjust(bottom=0.12, top=0.8)
     # fig.suptitle(figtitle)
     ls = dict(zip(surveyName, lls))
     # for key, vals in df.items():
@@ -321,22 +321,25 @@ def plot(df, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
     """
     ax.grid()
     #ax.legend(ncol=3, frameon=False)
-    ax.legend(loc='upper left', bbox_to_anchor=(
-        0., 1.3), ncol=3, frameon=False)
-    ax.set_xlabel(legx)
+    if not nolegend:
+        ax.legend(loc='upper left', bbox_to_anchor=(
+            0., 1.5), ncol=3, frameon=False)
+    if not noxaxis:
+        ax.set_xlabel(legx)
     ax.set_ylabel(legy)
+
+    if noxaxis:
+        ax.get_xaxis().set_ticklabels([])
 
     if len(rbudget) > 0:
         print(rbudget)
         res = np.rec.fromrecords(
             rbudget, names=['confName', 'plotName', 'budget', yvar, 'time'])
-        plot_summary(res, yvar, legy, tag_budget, tag_marker)
+        return res
 
 
-def plot_summary(res, yvar, legy, tag_budget=[], tag_marker=[]):
+def plot_summary(ax, res, yvar, legy, tag_budget=[], tag_marker=[], noxaxis=False, nolegend=False):
 
-    fig, ax = plt.subplots(figsize=(12, 8))
-    fig.subplots_adjust(bottom=0.12, top=0.8)
     # res[::-1].sort(order=yvar)
     res.sort(order=yvar)
     ls = ['solid', 'dashed']
@@ -352,11 +355,16 @@ def plot_summary(res, yvar, legy, tag_budget=[], tag_marker=[]):
 
     ax.grid()
     ax.set_ylabel(legy)
-    ax.set_xlabel('Observing Strategy')
+    if not noxaxis:
+        ax.set_xlabel('Observing Strategy')
     ax.xaxis.set_tick_params(labelsize=23)
     # ax.legend(frameon=False)
-    ax.legend(loc='upper left', bbox_to_anchor=(
-        0., 1.15), ncol=2, frameon=False)
+    if not nolegend:
+        ax.legend(loc='upper left', bbox_to_anchor=(
+            0., 1.2), ncol=2, frameon=False)
+
+    if noxaxis:
+        ax.get_xaxis().set_ticklabels([])
 
 
 def interp_budget(vals, xvar, yvar, xnew, ynew, smooth_it):
@@ -516,14 +524,14 @@ parser.add_option('--nspectro', type='str', default='200',
                   help='nspectro tag [%default]')
 parser.add_option('--figtitle', type='str', default='$N_{host}^{spectro}$=200/year',
                   help='plot title [%default]')
-parser.add_option('--var_to_plot', type='str', default='sigma_w',
+parser.add_option('--var_to_plot', type='str', default='sigma_w,detfom',
                   help='variable to plot [%default]')
-parser.add_option('--legy', type='str', default='$\sigma_{w}$',
+parser.add_option('--legy', type='str', default='$\sigma_{w}$,DETF FoM [95% C.L.]',
                   help='legy for var_to_plot[%default]')
 
 opts, args = parser.parse_args()
 
-cosmoDir = opts.cosmoDir
+cosmoDir = opts.cosmoDir.split(',')
 visitsDir = opts.visitsDir
 cadence = opts.cadence
 prefix_Nvisits = opts.prefix_Nvisits
@@ -532,33 +540,58 @@ config = opts.config
 nspectro = opts.nspectro
 config = opts.config
 figtitle = opts.figtitle
-var_to_plot = opts.var_to_plot
-legy = opts.legy
+var_to_plot = opts.var_to_plot.split(',')
+legy = opts.legy.split(',')
 
 # get the data
-cDir = '{}_{}'.format(cosmoDir, nspectro)
-df = CosmoData(config, cDir, prefix_Nvisits, visitsDir).data
+df = []
+for vv in cosmoDir:
+    cDir = '{}_{}'.format(vv, nspectro)
+    dt = CosmoData(config, cDir, prefix_Nvisits, visitsDir).data
+    CL = 6.17
+    if 'detfom' in dt.columns:
+        dt['detfom'] /= CL
+    df.append(dt)
 
+"""
 print('hello', df['confName'])
 print(df.columns)
-"""
 df['detfomb'] = 1./(df['sigma_wp']*df['sigma_wa'])
 df['detfomb'] /= 6.17
 df['detfom'] /= 6.17
 
 plot(df, tag_budget=[0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 """
-CL = 6.17
-if 'detfom' in df.columns:
-    df['detfom'] /= CL
+
 smooth_It = True
 if 'nsn' in var_to_plot:
     smooth_It = False
 #smooth_It = True
+"""
+# fig. 20 and 21
+fig, ax = plt.subplots(figsize=(12, 9), nrows=len(var_to_plot))
+fig.subplots_adjust(bottom=0.12, top=0.85)
+noxaxis = dict(zip([0, 1], [1, 0]))
+nolegend = dict(zip([0, 1], [0, 1]))
+summary = []
+tag_budget = [0.05, 0.0788]
+tag_marker = ['o', 's']
 
-fig. 20 and 21
-plot(df, yvar=var_to_plot, legy=legy, tag_budget=[
-     0.05, 0.0788], tag_marker=['o', 's'], smooth_it=smooth_It, figtitle=figtitle)
+for io, vv in enumerate(var_to_plot):
+    rr = plot(df[io], ax[io], yvar=vv, legy=legy[io], tag_budget=tag_budget, tag_marker=tag_marker,
+              smooth_it=smooth_It, figtitle=figtitle, noxaxis=noxaxis[io], nolegend=nolegend[io])
+    summary.append(rr)
+
+plt.subplots_adjust(hspace=0.08)
+
+fig, ax = plt.subplots(figsize=(12, 9), nrows=len(summary))
+fig.subplots_adjust(bottom=0.12, top=0.9)
+for io, vv in enumerate(summary):
+    plot_summary(ax[io], vv, yvar=var_to_plot[io], legy=legy[io],
+                 tag_budget=tag_budget, tag_marker=tag_marker, noxaxis=noxaxis[io], nolegend=nolegend[io])
+
+plt.subplots_adjust(hspace=0.02)
+"""
 """
 plot(df, yvar='detfom', legy='DETF FoM [95$\%$ C.L.]', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
@@ -566,13 +599,30 @@ plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 """
 # fig. 19
-"""
+
 smooth_It = False
+"""
 plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra-deep}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle, smooth_it=smooth_It)
 plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle, smooth_it=smooth_It)
 """
+fig, ax = plt.subplots(figsize=(12, 9), nrows=len(var_to_plot))
+fig.subplots_adjust(bottom=0.12, top=0.85)
+noxaxis = dict(zip([0, 1], [1, 0]))
+nolegend = dict(zip([0, 1], [0, 1]))
+summary = []
+tag_budget = [0.05, 0.0788]
+tag_marker = ['o', 's']
+
+for io, vv in enumerate(var_to_plot):
+    rr = plot(df[io], ax[io], yvar=vv, legy=legy[io], tag_budget=tag_budget, tag_marker=tag_marker,
+              smooth_it=smooth_It, figtitle=figtitle, noxaxis=noxaxis[io], nolegend=nolegend[io])
+    summary.append(rr)
+
+plt.subplots_adjust(hspace=0.04)
+
+
 """
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)

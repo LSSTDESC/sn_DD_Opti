@@ -301,20 +301,19 @@ def plot_info(df, xvar='zcomp_dd', yvar='sigma_w', xleg='$z_{complete}^{DD}$', y
     ax.legend(ncol=3, frameon=False)
 
 
-def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sigma_w$',
+def plot_vs_budget(ax, df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sigma_w$',
                    surveyName=['deep_rolling_early_0.80_0.60', 'deep_rolling_early_0.75_0.60', 'deep_rolling_early_0.70_0.60',
                                'deep_rolling_ten_years_0.75_0.65', 'universal_0.00_0.65', ],
                    plotName=['IDR$_{0.80}^{0.60}$', 'IDR$_{0.75}^{0.60}$',
                              'IDR$_{0.70}^{0.60}$',  'DR$_{0.75}^{0.65}$', 'DU$^{0.65}$'],
                    lls=['solid', linestyles['densely dashdotdotted'],
                         'dashdot', 'dotted', 'dashed'],
-                   colors=['red', 'red', 'red', 'magenta', 'blue']):
+                   colors=['red', 'red', 'red', 'magenta', 'blue'], noyaxis=False, nolegend=False, tag_budget=[]):
 
     corresp = dict(zip(surveyName, plotName))
     ccolors = dict(zip(surveyName, colors))
     ls = dict(zip(surveyName, lls))
-    fig, ax = plt.subplots(figsize=(12, 8))
-    fig.subplots_adjust(bottom=0.12, top=0.8)
+
     """
     confPlot = ['deep_rolling_early_0.70_0.60',
                 'deep_rolling_early_0.75_0.60',
@@ -346,12 +345,24 @@ def plot_vs_budget(df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$\sig
 
     ax.grid()
     ax.set_xlabel(xleg)
-    ax.set_ylabel(yleg)
+
+    if not noyaxis:
+        ax.set_ylabel(yleg)
     #ax.legend(ncol=3, frameon=False)
-    ax.legend(loc='upper left', bbox_to_anchor=(
-        0., 1.3), ncol=3, frameon=False)
-    ax.set_ylim([0.03, None])
+    if not nolegend:
+        ax.legend(loc='upper left', bbox_to_anchor=(
+            0., 1.3), ncol=3, frameon=False)
+    ax.set_ylim([3.0, 10.])
+    if noyaxis:
+        ax.get_yaxis().set_ticklabels([])
+
     # fig.tight_layout()
+    if tag_budget:
+        x_min, x_max = ax.get_xlim()
+        print('alors', x_min, x_max)
+        for tt in tag_budget:
+            ax.plot([x_min, x_max], [tt]*2, color='k', lw=2, ls='dotted')
+        ax.set_xlim([x_min, x_max])
 
 
 def plot_vs_nspectro(config, visitsDir, prefix_Nvisits, nspectro, cosmoDir):
@@ -425,16 +436,18 @@ else:
 
     # plot_vs_budget(df, xvar='budget', yvar='nsn_DD',
     #               xleg='budget', yleg='$N_{SN}$')
-
-    plot_vs_budget(df, yvar='budget', xvar='nsn_DD',
-                   yleg='budget', xleg='$N_{SN}$')
+    fig, ax = plt.subplots(figsize=(12, 8), ncols=2)
+    fig.subplots_adjust(bottom=0.12, top=0.8)
+    df['budget_per'] = 100.*df['budget']
+    plot_vs_budget(ax[0], df, yvar='budget_per', xvar='nsn_DD',
+                   yleg='DD budget [%]', xleg='$N_{SN}$', tag_budget=[5.0, 8.0])
 
     # plot_vs_budget(df, yvar='time', xvar='budget',
     #                yleg='Time budget [year]', xleg='budget')
 
-    plot_vs_budget(df, xvar='time', yvar='budget',
-                   xleg='Time budget [year]', yleg='budget')
-
+    plot_vs_budget(ax[1], df, xvar='time', yvar='budget_per',
+                   xleg='Time budget [year]', yleg='DD budget [%]', noyaxis=True, nolegend=True, tag_budget=[5.0, 8.0])
+    plt.subplots_adjust(wspace=0.02)
     """
     plot_vs_budget(df, xvar='budget', yvar='sigma_w',
                    xleg='budget', yleg='$\sigma_w$')
