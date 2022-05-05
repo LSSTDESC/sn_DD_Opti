@@ -6,6 +6,8 @@ from wrapper import DD_Budget
 from scipy.interpolate import interp1d, make_interp_spline, UnivariateSpline
 from scipy.ndimage.filters import gaussian_filter
 
+lw = 3
+
 
 def smooth_It(vals, xvar, yvar):
 
@@ -281,7 +283,7 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
         year_max = np.max([year_max, np.max(vals['year'])])
         if not smooth_it:
             ax.plot(vals[xvar], vals[yvar], marker='None',
-                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=2)
+                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=lw)
 
         xnew = None
         spl_smooth = None
@@ -295,7 +297,7 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
             spl.set_smoothing_factor(0.5)
             spl_smooth = spl(xnew)
             ax.plot(xnew, spl_smooth, marker='None',
-                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=2)
+                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=lw)
 
         if len(tag_budget) > 0:
             interp_bud, interp_var = interp_budget(
@@ -351,7 +353,7 @@ def plot_summary(ax, res, yvar, legy, tag_budget=[], tag_marker=[], noxaxis=Fals
         if yvar == 'sigma_w':
             sel = sel[::-1]
         ax.plot(sel['plotName'], sel[yvar], marker=tag_marker[i], ls=ls[i],
-                color='r', markerfacecolor='k', ms=10, markeredgewidth=0, lw=2, label='DD budget = {}'.format(np.round(val, 2)))
+                color='r', markerfacecolor='k', ms=10, markeredgewidth=0, lw=lw, label='DD budget = {}'.format(np.round(val, 2)))
 
     ax.grid()
     ax.set_ylabel(legy)
@@ -567,7 +569,7 @@ smooth_It = True
 if 'nsn' in var_to_plot:
     smooth_It = False
 #smooth_It = True
-"""
+
 # fig. 20 and 21
 fig, ax = plt.subplots(figsize=(12, 9), nrows=len(var_to_plot))
 fig.subplots_adjust(bottom=0.12, top=0.85)
@@ -591,22 +593,24 @@ for io, vv in enumerate(summary):
                  tag_budget=tag_budget, tag_marker=tag_marker, noxaxis=noxaxis[io], nolegend=nolegend[io])
 
 plt.subplots_adjust(hspace=0.02)
-"""
+
 """
 plot(df, yvar='detfom', legy='DETF FoM [95$\%$ C.L.]', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 """
-# fig. 19
 
-smooth_It = False
 """
 plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra-deep}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle, smooth_it=smooth_It)
 plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle, smooth_it=smooth_It)
 """
+"""
+# fig. 19
+
+smooth_It = False
 fig, ax = plt.subplots(figsize=(12, 9), nrows=len(var_to_plot))
 fig.subplots_adjust(bottom=0.12, top=0.85)
 noxaxis = dict(zip([0, 1], [1, 0]))
@@ -621,7 +625,7 @@ for io, vv in enumerate(var_to_plot):
     summary.append(rr)
 
 plt.subplots_adjust(hspace=0.04)
-
+"""
 
 """
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[

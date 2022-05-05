@@ -3,6 +3,7 @@ from __init__ import plt, linestyles
 from scipy.interpolate import interp1d
 import numpy as np
 
+lw = 3
 df = pd.read_csv('input/Nvisits_zcomp.csv')
 
 df['season_length'] = 180.
@@ -15,13 +16,13 @@ df['budget_per'] = 100.*df['nvisits_DD']/(df['nvisits_DD']+df['nvisits_WFD'])
 fig, ax = plt.subplots(figsize=(12, 9))
 ww = 'budget'
 ww = 'budget_per'
-ax.plot(df['zcomp'], df[ww], color='r', lw=2)
+ax.plot(df['zcomp'], df[ww], color='r', lw=lw)
 interp = interp1d(df['zcomp'], df[ww], bounds_error=False, fill_value=0.)
 zref = 0.80
 bud = interp(zref)
 
-ax.plot([zref]*2, [0., bud], color='k', ls='dotted')
-ax.plot([0., zref], [bud]*2, color='k', ls='dotted')
+ax.plot([zref]*2, [0., bud], color='k', ls='dotted', lw=lw)
+ax.plot([0., zref], [bud]*2, color='k', ls='dotted', lw=lw)
 
 #ax.text(0.67, bud+0.0005, 'budget = {}'.format(np.round(bud, 3)))
 ax.text(0.67, bud+0.05, 'budget = {} %'.format(np.round(bud, 1)))

@@ -6,6 +6,8 @@ import os
 from wrapper import DD_Budget
 from scipy.interpolate import interp1d
 
+lw = 3
+
 
 class Budget_Time:
     """
@@ -341,7 +343,7 @@ def plot_vs_budget(ax, df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$
         if confName == 'deep_rolling_ten_years_0.75_0.65':
             print('aooo', sel[yvar], sel[xvar])
         ax.plot(sel[xvar], sel[yvar], marker='None',
-                ls=ls[confName], label=corresp[confName], color=ccolors[confName], lw=2)
+                ls=ls[confName], label=corresp[confName], color=ccolors[confName], lw=lw)
 
     ax.grid()
     ax.set_xlabel(xleg)
@@ -361,7 +363,7 @@ def plot_vs_budget(ax, df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$
         x_min, x_max = ax.get_xlim()
         print('alors', x_min, x_max)
         for tt in tag_budget:
-            ax.plot([x_min, x_max], [tt]*2, color='k', lw=2, ls='dotted')
+            ax.plot([x_min, x_max], [tt]*2, color='k', lw=lw, ls='dotted')
         ax.set_xlim([x_min, x_max])
 
 
