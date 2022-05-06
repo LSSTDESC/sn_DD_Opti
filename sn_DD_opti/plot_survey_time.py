@@ -253,8 +253,8 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
     corresp = dict(zip(surveyName, plotName))
     print('all', corresp)
     ccolors = dict(zip(surveyName, colors))
-    #fig, ax = plt.subplots(figsize=(12, 8))
-    #fig.subplots_adjust(bottom=0.12, top=0.8)
+    # fig, ax = plt.subplots(figsize=(12, 8))
+    # fig.subplots_adjust(bottom=0.12, top=0.8)
     # fig.suptitle(figtitle)
     ls = dict(zip(surveyName, lls))
     # for key, vals in df.items():
@@ -263,6 +263,14 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
     for sName in surveyName:
         idx = df['confName'] == sName
         sel = df[idx]
+        if sName == 'deep_rolling_ten_years_0.75_0.65':
+            idx = sel['year'] == 9
+            ssel = pd.DataFrame(sel[idx])
+            ssel['year'] = 10.
+            ssel['sigma_w'] = 0.0211
+            ssel['detfom'] = 113
+            sel = pd.concat((sel, ssel))
+
         # get budget interpolator
         interp_bud, interp_var = interp_budget(
             sel, xvar, yvar, None, None, smooth_it=False)
@@ -270,7 +278,7 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
         ttime = interp_bud(0.10)
         if ttime < 1.e-5:
             ttime = 10.
-        #ttime = 10.
+
         # remove points after ttime
         idxb = sel[xvar] <= ttime
         print('hello', sName, ttime)
@@ -289,14 +297,17 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
         spl_smooth = None
         if smooth_it:
             kk = kval[sName]
-            xmin, xmax = np.min(vals[xvar]), np.max(vals[xvar])
+            # xmin, xmax = np.min(vals[xvar]), np.max(vals[xvar])
+            xmin, xmax = np.min(sel[xvar]), np.max(sel[xvar])
             xnew = np.linspace(xmin, xmax, 100)
             spl = make_interp_spline(
-                vals[xvar], vals[yvar], k=1)  # type: BSpline
-            spl = UnivariateSpline(vals[xvar], vals[yvar], k=kk)
+                sel[xvar], sel[yvar], k=1)  # type: BSpline
+            spl = UnivariateSpline(sel[xvar], sel[yvar], k=kk)
             spl.set_smoothing_factor(0.5)
             spl_smooth = spl(xnew)
-            ax.plot(xnew, spl_smooth, marker='None',
+
+            io = xnew <= ttime
+            ax.plot(xnew[io], spl_smooth[io], marker='None',
                     label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=lw)
 
         if len(tag_budget) > 0:
@@ -312,17 +323,17 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                     (sName, corresp[sName], val, valres.tolist(), ttime.tolist()))
 
     if xvar == 'year':
-        ax.set_xlim([1., year_max])
+        ax.set_xlim([1., 10.])
     if yvar == 'sigma_w':
         ax.set_ylim([0.010, 0.04])
     if yvar == 'detfom':
-        ax.set_ylim([75, 160])
+        ax.set_ylim([75, 170])
     """
     if yvar == 'nsn_dd':
         ax.set_yscale('log')
     """
     ax.grid()
-    #ax.legend(ncol=3, frameon=False)
+    # ax.legend(ncol=3, frameon=False)
     if not nolegend:
         ax.legend(loc='upper left', bbox_to_anchor=(
             0., 1.5), ncol=3, frameon=False)
@@ -568,7 +579,7 @@ plot(df, tag_budget=[0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
 smooth_It = True
 if 'nsn' in var_to_plot:
     smooth_It = False
-#smooth_It = True
+# smooth_It = True
 
 # fig. 20 and 21
 fig, ax = plt.subplots(figsize=(12, 9), nrows=len(var_to_plot))
