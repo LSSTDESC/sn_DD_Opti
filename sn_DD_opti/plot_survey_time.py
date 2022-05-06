@@ -269,6 +269,7 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
             ssel['year'] = 10.
             ssel['sigma_w'] = 0.0211
             ssel['detfom'] = 113
+            ssel['nsn_dd'] = 2200
             sel = pd.concat((sel, ssel))
 
         # get budget interpolator
@@ -289,25 +290,33 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                 vals.loc[io, 'detfom'] = 1.07*vals.loc[io, 'detfom']
 
         year_max = np.max([year_max, np.max(vals['year'])])
+        """
         if not smooth_it:
             ax.plot(vals[xvar], vals[yvar], marker='None',
                     label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=lw)
-
+        """
         xnew = None
         spl_smooth = None
+        kk = kval[sName]
+        # xmin, xmax = np.min(vals[xvar]), np.max(vals[xvar])
+        xmin, xmax = np.min(sel[xvar]), np.max(sel[xvar])
+        xnew = np.linspace(xmin, xmax, 100)
+
         if smooth_it:
-            kk = kval[sName]
-            # xmin, xmax = np.min(vals[xvar]), np.max(vals[xvar])
-            xmin, xmax = np.min(sel[xvar]), np.max(sel[xvar])
-            xnew = np.linspace(xmin, xmax, 100)
             spl = make_interp_spline(
                 sel[xvar], sel[yvar], k=1)  # type: BSpline
             spl = UnivariateSpline(sel[xvar], sel[yvar], k=kk)
             spl.set_smoothing_factor(0.5)
             spl_smooth = spl(xnew)
-
             io = xnew <= ttime
             ax.plot(xnew[io], spl_smooth[io], marker='None',
+                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=lw)
+        else:
+            vv = interp1d(sel[xvar], sel[yvar],
+                          bounds_error=False, fill_value=0.)
+            sspl = vv(xnew)
+            io = xnew <= ttime
+            ax.plot(xnew[io], sspl[io], marker='None',
                     label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=lw)
 
         if len(tag_budget) > 0:
@@ -582,6 +591,7 @@ if 'nsn' in var_to_plot:
 # smooth_It = True
 
 # fig. 20 and 21
+"""
 fig, ax = plt.subplots(figsize=(12, 9), nrows=len(var_to_plot))
 fig.subplots_adjust(bottom=0.12, top=0.85)
 noxaxis = dict(zip([0, 1], [1, 0]))
@@ -604,7 +614,7 @@ for io, vv in enumerate(summary):
                  tag_budget=tag_budget, tag_marker=tag_marker, noxaxis=noxaxis[io], nolegend=nolegend[io])
 
 plt.subplots_adjust(hspace=0.02)
-
+"""
 """
 plot(df, yvar='detfom', legy='DETF FoM [95$\%$ C.L.]', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
@@ -618,7 +628,7 @@ plot(df, yvar='nsn_ultra', legy='$N_{SN}^{ultra-deep}$', tag_budget=[
 plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle, smooth_it=smooth_It)
 """
-"""
+
 # fig. 19
 
 smooth_It = False
@@ -636,7 +646,7 @@ for io, vv in enumerate(var_to_plot):
     summary.append(rr)
 
 plt.subplots_adjust(hspace=0.04)
-"""
+
 
 """
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
