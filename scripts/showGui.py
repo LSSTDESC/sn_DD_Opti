@@ -76,7 +76,7 @@ if opts.show == 'visits':
                           nvisits_max=opts.Nvisits_max,
                           zmax=opts.zmax,
                           dir_files=visitsDir)
-
+    
 if opts.show == 'budget':
     mybud = GUI_Budget(Nvisits_z_file,
                        Nvisits_z_fields_file,
