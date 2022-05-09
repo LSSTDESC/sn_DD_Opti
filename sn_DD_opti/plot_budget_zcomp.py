@@ -8,6 +8,7 @@ from wrapper import Mod_z
 
 lw = 3
 
+
 class Show_Visits:
     """
     class to display nvisits vs redshift
@@ -30,9 +31,9 @@ class Show_Visits:
 
     """
 
-    def __init__(self, ax,file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_files='input'):
+    def __init__(self, ax, file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_files='input'):
 
-        self.ax=ax
+        self.ax = ax
         self.cadence = cadence
         self.nvisits_max = nvisits_max
         self.zmin = zmin
@@ -99,12 +100,12 @@ class Show_Visits:
             self.ax.plot(zvals, self.dictvisits[key](
                 zvals), color=self.colors[b], label='${}$-band'.format(b), lw=3, ls=lsb[b])
         self.ax.grid()
-        #self.ax.set_xlabel('$z_{\mathrm{complete}}$')
+        # self.ax.set_xlabel('$z_{\mathrm{complete}}$')
         self.ax.set_ylabel(r'$\mathrm{N_{visits}}$')
         # self.ax.legend()
         # self.ax.legend(bbox_to_anchor=(1.2, -0.1), ncol=1,
         #               fontsize=12,frameon=False, loc='lower right')
-        self.ax.legend(bbox_to_anchor=(0.5, 1.3),
+        self.ax.legend(bbox_to_anchor=(0.5, 1.35),
                        loc='upper center', ncol=3, frameon=False)
         self.ax.set_ylim(0,)
         if self.nvisits_max > 0:
@@ -112,6 +113,7 @@ class Show_Visits:
         self.ax.set_xlim(xmax=self.zmax)
 
         self.ax.set_xticklabels([])
+
     def plotzlim(self, z=0.6):
         """
         Method to write the number of visits corresponding to a given redshift
@@ -122,20 +124,20 @@ class Show_Visits:
           redshift considered
 
         """
-        fontsize = 20
+        fontsize = 18
 
         ylims = self.ax.get_ylim()
         nvisits = int(np.round(self.dictvisits['nvisits'](z)))
         yref = 0.85*ylims[1]
-        scale = 0.1*ylims[1]
+        scale = 0.12*ylims[1]
         nvstr = 'N$_{\mathrm{{visits}}}$'
         zstr = '$z_{\mathrm{complete}}$'
-        #self.ax.text(0.55, yref, '{}= {}'.format(nvstr,
+        # self.ax.text(0.55, yref, '{}= {}'.format(nvstr,
         #                                         nvisits))
         self.ax.text(0.60, 140, '{}= {}'.format(nvstr,
-                                                 nvisits))
-        coeffa = dict(zip(self.bands,[0.52,0.52,0.52,0.62,0.62]))
-        coeffb = dict(zip(self.bands,[0,1,2,0,1]))
+                                                nvisits))
+        coeffa = dict(zip(self.bands, [0.52, 0.52, 0.52, 0.62, 0.62]))
+        coeffb = dict(zip(self.bands, [0, 1, 2, 0, 1]))
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(np.round(self.dictvisits[key](z)))
@@ -143,12 +145,12 @@ class Show_Visits:
             self.ax.text(coeffa[b], 0.99*ylims[1]-scale*(coeffb[b]+1),
                          '{} ={}'.format(ff, nvisits_b), color=self.colors[b])
 
-        #self.ax.text(0.9*z, np.min([1.5*nvisits, 280]),
+        # self.ax.text(0.9*z, np.min([1.5*nvisits, 280]),
         #             '{} = {}'.format(zstr, np.round(z, 2)))
-        self.ax.text(0.95*z, np.min([1.75*nvisits, 280]),
-                       '{} = {}'.format(zstr, np.round(z, 2)))
-        
-        #self.ax.arrow(z, np.min([1.4*nvisits, 270]), 0., np.max([-1.4*nvisits, -270]),
+        self.ax.text(0.93*z, np.min([1.75*nvisits, 280]),
+                     '{} = {}'.format(zstr, np.round(z, 2)))
+
+        # self.ax.arrow(z, np.min([1.4*nvisits, 270]), 0., np.max([-1.4*nvisits, -270]),
         #              length_includes_head=True, color='r',
         #              head_length=5, head_width=0.01)
         self.ax.plot([z]*2, [0., 300], color='k', ls='dotted', lw=lw)
@@ -172,11 +174,12 @@ class Show_Visits:
         # self.plotzlim(np.round(zlim, 2))
         self.plotzlim(zlim)
 
-        #self.ax.plot(self.ax.get_xlim(), [nvisits]*2,
+        # self.ax.plot(self.ax.get_xlim(), [nvisits]*2,
         #             color='r', linestyle='--')
 
-def plot_budget_zcomp(ax,zref=0.80):
-    
+
+def plot_budget_zcomp(ax, zref=0.80):
+
     df = pd.read_csv('input/Nvisits_zcomp.csv')
 
     df['season_length'] = 180.
@@ -184,9 +187,9 @@ def plot_budget_zcomp(ax,zref=0.80):
 
     df['nvisits_DD'] = df['nvisits']*df['season_length']
     df['budget'] = df['nvisits_DD']/(df['nvisits_DD']+df['nvisits_WFD'])
-    df['budget_per'] = 100.*df['nvisits_DD']/(df['nvisits_DD']+df['nvisits_WFD'])
+    df['budget_per'] = 100.*df['nvisits_DD'] / \
+        (df['nvisits_DD']+df['nvisits_WFD'])
 
-    
     ww = 'budget'
     ww = 'budget_per'
     ax.plot(df['zcomp'], df[ww], color='r', lw=lw)
@@ -274,9 +277,9 @@ visitsDir = opts.visitsDir
 check_grab(visitsDir, [Nvisits_z_file, Nvisits_z_fields_file])
 
 
-fig, ax = plt.subplots(figsize=(10, 16),nrows=2)
+fig, ax = plt.subplots(figsize=(9, 16), nrows=2)
 
-myvisits = Show_Visits(ax[0],Nvisits_z_file,
+myvisits = Show_Visits(ax[0], Nvisits_z_file,
                        cadence=opts.cadence,
                        nvisits_max=opts.Nvisits_max,
                        zmax=opts.zmax,
@@ -284,7 +287,7 @@ myvisits = Show_Visits(ax[0],Nvisits_z_file,
 
 myvisits.plotNvisits()
 myvisits.plotnvisits(131)
-ax[0].set_xlim([0.5,0.95])
+ax[0].set_xlim([0.5, 0.95])
 plot_budget_zcomp(ax[1])
 
 plt.subplots_adjust(hspace=0.04)

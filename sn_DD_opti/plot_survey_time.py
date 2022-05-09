@@ -310,14 +310,14 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
             spl_smooth = spl(xnew)
             io = xnew <= ttime
             ax.plot(xnew[io], spl_smooth[io], marker='None',
-                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=lw)
+                    label=corresp[sName], ls=ls[sName], ms=6, mfc='None', color=ccolors[sName], lw=lw)
         else:
             vv = interp1d(sel[xvar], sel[yvar],
                           bounds_error=False, fill_value=0.)
             sspl = vv(xnew)
             io = xnew <= ttime
             ax.plot(xnew[io], sspl[io], marker='None',
-                    label=corresp[sName], ls=ls[sName], ms=5, color=ccolors[sName], lw=lw)
+                    label=corresp[sName], ls=ls[sName], ms=6, mfc='None', color=ccolors[sName], lw=lw)
 
         if len(tag_budget) > 0:
             interp_bud, interp_var = interp_budget(
@@ -326,7 +326,7 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
                 ttime = interp_bud(val)
                 valres = interp_var(ttime)
                 ax.plot(ttime, valres,
-                        marker=tag_marker[i], color='k', ms=7, markeredgewidth=2)
+                        marker=tag_marker[i], color='k', ms=15, mfc='None', markeredgewidth=2)
                 print('resu budget', val, xvar, ttime, yvar, valres)
                 rbudget.append(
                     (sName, corresp[sName], val, valres.tolist(), ttime.tolist()))
@@ -372,9 +372,10 @@ def plot_summary(ax, res, yvar, legy, tag_budget=[], tag_marker=[], noxaxis=Fals
         print('there man', yvar)
         if yvar == 'sigma_w':
             sel = sel[::-1]
+        # ax.plot(sel['plotName'], sel[yvar], marker=tag_marker[i], ls=ls[i],
+        #        color='r', markerfacecolor='k', ms=10, markeredgewidth=0, lw=lw, label='DD budget = {}'.format(np.round(val, 2)))
         ax.plot(sel['plotName'], sel[yvar], marker=tag_marker[i], ls=ls[i],
-                color='r', markerfacecolor='k', ms=10, markeredgewidth=0, lw=lw, label='DD budget = {}'.format(np.round(val, 2)))
-
+                color='r', mec='k', markerfacecolor='None', markeredgewidth=2, ms=15, lw=lw, label='DD budget = {}'.format(np.round(val, 2)))
     ax.grid()
     ax.set_ylabel(legy)
     if not noxaxis:
@@ -591,7 +592,7 @@ if 'nsn' in var_to_plot:
 # smooth_It = True
 
 # fig. 20 and 21
-
+"""
 fig, ax = plt.subplots(figsize=(9, 16), nrows=len(var_to_plot))
 fig.subplots_adjust(bottom=0.12, top=0.85)
 noxaxis = dict(zip([0, 1], [1, 0]))
@@ -614,7 +615,7 @@ for io, vv in enumerate(summary):
                  tag_budget=tag_budget, tag_marker=tag_marker, noxaxis=noxaxis[io], nolegend=nolegend[io])
 
 plt.subplots_adjust(hspace=0.02, left=0.15)
-
+"""
 """
 plot(df, yvar='detfom', legy='DETF FoM [95$\%$ C.L.]', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
@@ -630,7 +631,7 @@ plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
 """
 
 # fig. 19
-"""
+
 smooth_It = False
 fig, ax = plt.subplots(figsize=(9, 16), nrows=len(var_to_plot))
 noxaxis = dict(zip([0, 1], [1, 0]))
@@ -645,7 +646,7 @@ for io, vv in enumerate(var_to_plot):
     summary.append(rr)
 
 plt.subplots_adjust(hspace=0.04, left=0.15, bottom=0.12, top=0.85)
-"""
+
 
 """
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
