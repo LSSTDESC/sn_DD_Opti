@@ -345,7 +345,7 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
     # ax.legend(ncol=3, frameon=False)
     if not nolegend:
         ax.legend(loc='upper left', bbox_to_anchor=(
-            0., 1.5), ncol=3, frameon=False)
+            -0.1, 1.5), ncol=3, frameon=False)
     if not noxaxis:
         ax.set_xlabel(legx)
     ax.set_ylabel(legy)
@@ -383,7 +383,7 @@ def plot_summary(ax, res, yvar, legy, tag_budget=[], tag_marker=[], noxaxis=Fals
     # ax.legend(frameon=False)
     if not nolegend:
         ax.legend(loc='upper left', bbox_to_anchor=(
-            0., 1.2), ncol=2, frameon=False)
+            -0.16, 1.2), ncol=2, frameon=False, fontsize=23)
 
     if noxaxis:
         ax.get_xaxis().set_ticklabels([])
@@ -591,8 +591,8 @@ if 'nsn' in var_to_plot:
 # smooth_It = True
 
 # fig. 20 and 21
-"""
-fig, ax = plt.subplots(figsize=(12, 9), nrows=len(var_to_plot))
+
+fig, ax = plt.subplots(figsize=(9, 16), nrows=len(var_to_plot))
 fig.subplots_adjust(bottom=0.12, top=0.85)
 noxaxis = dict(zip([0, 1], [1, 0]))
 nolegend = dict(zip([0, 1], [0, 1]))
@@ -607,14 +607,14 @@ for io, vv in enumerate(var_to_plot):
 
 plt.subplots_adjust(hspace=0.08)
 
-fig, ax = plt.subplots(figsize=(12, 9), nrows=len(summary))
+fig, ax = plt.subplots(figsize=(9, 16), nrows=len(summary))
 fig.subplots_adjust(bottom=0.12, top=0.9)
 for io, vv in enumerate(summary):
     plot_summary(ax[io], vv, yvar=var_to_plot[io], legy=legy[io],
                  tag_budget=tag_budget, tag_marker=tag_marker, noxaxis=noxaxis[io], nolegend=nolegend[io])
 
-plt.subplots_adjust(hspace=0.02)
-"""
+plt.subplots_adjust(hspace=0.02, left=0.15)
+
 """
 plot(df, yvar='detfom', legy='DETF FoM [95$\%$ C.L.]', tag_budget=[
      0.05, 0.0788], tag_marker=['o', 's'], figtitle=figtitle)
@@ -630,10 +630,9 @@ plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
 """
 
 # fig. 19
-
+"""
 smooth_It = False
-fig, ax = plt.subplots(figsize=(12, 9), nrows=len(var_to_plot))
-fig.subplots_adjust(bottom=0.12, top=0.85)
+fig, ax = plt.subplots(figsize=(9, 16), nrows=len(var_to_plot))
 noxaxis = dict(zip([0, 1], [1, 0]))
 nolegend = dict(zip([0, 1], [0, 1]))
 summary = []
@@ -645,8 +644,8 @@ for io, vv in enumerate(var_to_plot):
               smooth_it=smooth_It, figtitle=figtitle, noxaxis=noxaxis[io], nolegend=nolegend[io])
     summary.append(rr)
 
-plt.subplots_adjust(hspace=0.04)
-
+plt.subplots_adjust(hspace=0.04, left=0.15, bottom=0.12, top=0.85)
+"""
 
 """
 plot(df, yvar='sigma_w', legy='$\sigma_{w}$', tag_budget=[
