@@ -264,14 +264,18 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
         idx = df['confName'] == sName
         sel = df[idx]
         if sName == 'deep_rolling_ten_years_0.75_0.65':
+
             idx = sel['year'] == 9
             ssel = pd.DataFrame(sel[idx])
             ssel['year'] = 10.
             ssel['sigma_w'] = 0.0211
-            ssel['detfom'] = 113
+            ssel['detfom'] = 112.5
             ssel['nsn_dd'] = 2200
             sel = pd.concat((sel, ssel))
-
+            """
+            idx = sel['year'] == 3
+            sel.loc[idx, 'sigma_w'] = 0.023
+            """
         # get budget interpolator
         interp_bud, interp_var = interp_budget(
             sel, xvar, yvar, None, None, smooth_it=False)
@@ -309,8 +313,23 @@ def plot(df, ax, xvar='year', yvar='sigma_w', legx='Year', legy='$\sigma_w$',
             spl.set_smoothing_factor(0.5)
             spl_smooth = spl(xnew)
             io = xnew <= ttime
-            ax.plot(xnew[io], spl_smooth[io], marker='None',
-                    label=corresp[sName], ls=ls[sName], ms=6, mfc='None', color=ccolors[sName], lw=lw)
+            if sName == 'deep_rolling_ten_years_0.75_0.65':
+                tref = 3.5
+                if yvar != 'sigma_w':
+                    tref = 3.
+                io = xnew <= tref
+                ax.plot(xnew[io], spl_smooth[io], marker='None',
+                        label=corresp[sName], ls=ls[sName], ms=6, mfc='None', color=ccolors[sName], lw=lw)
+                vv = interp1d(sel[xvar], sel[yvar],
+                              bounds_error=False, fill_value=0.)
+                sspl = vv(xnew)
+                io = xnew >= tref
+                ax.plot(xnew[io], sspl[io], marker='None', ls=ls[sName],
+                        ms=6, mfc='None', color=ccolors[sName], lw=lw)
+            else:
+                ax.plot(xnew[io], spl_smooth[io], marker='None',
+                        label=corresp[sName], ls=ls[sName], ms=6, mfc='None', color=ccolors[sName], lw=lw)
+
         else:
             vv = interp1d(sel[xvar], sel[yvar],
                           bounds_error=False, fill_value=0.)
@@ -632,7 +651,7 @@ plot(df, yvar='nsn_dd', legy='$N_{SN}^{deep}$', tag_budget=[
 
 # fig. 19
 
-smooth_It = False
+smooth_It = True
 fig, ax = plt.subplots(figsize=(9, 16), nrows=len(var_to_plot))
 noxaxis = dict(zip([0, 1], [1, 0]))
 nolegend = dict(zip([0, 1], [0, 1]))
