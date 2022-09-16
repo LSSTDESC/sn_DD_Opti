@@ -9,6 +9,14 @@ from scipy.interpolate import interp1d
 lw = 3
 
 
+def coeff(x1, x2, y1, y2):
+
+    a = (y2-y1)/(x2-x1)
+    b = (y1*x2-y2*x1)/(x2-x1)
+
+    return a, b
+
+
 class Budget_Time:
     """
     class to estimate for each configuration some infos corresponding to a set of budgets
@@ -328,7 +336,6 @@ def plot_vs_budget(ax, df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$
     namePlot = ['EDR$_{0.70}^{0.60}$',
                 'EDR$_{0.75}^{0.60}$', 'EDR$_{0.80}^{0.60}$', 'DU$^{0.65}$', 'DR$_{0.75}^{0.65}$']
 
-    
 
     
     corresp = dict(zip(confPlot, namePlot))
@@ -341,7 +348,7 @@ def plot_vs_budget(ax, df, xvar='budget', yvar='sigma_w', xleg='budget', yleg='$
         sel = sel[sel[yvar] > 1.e-5]
         sel = sel[sel[xvar] > 1.e-5]
         if confName == 'deep_rolling_ten_years_0.75_0.65':
-            print('aooo', sel[yvar], sel[xvar])
+            print('aooo', yvar, xvar, sel[yvar], sel[xvar])
         ax.plot(sel[xvar], sel[yvar], marker='None',
                 ls=ls[confName], label=corresp[confName], color=ccolors[confName], lw=lw)
 
@@ -436,6 +443,26 @@ if len(nspectro) > 1:
 else:
     df = load_Summary(config, cosmoDir, prefix_Nvisits, visitsDir, nspectro[0])
 
+    print('hello', df.columns)
+    idx = df['confName'] == 'deep_rolling_ten_years_0.75_0.65'
+    print(df[idx][['time', 'budget', 'nsn_DD']])
+    sel = df[idx]
+    idxb = np.abs(sel['budget']-0.06) < 1.e-5
+    ssel = sel[idxb]
+    idx1 = np.abs(sel['budget']-0.04) <= 1.e-5
+    idx2 = np.abs(sel['budget']-0.05) <= 1.e-5
+    v1 = sel[idx1]
+    v2 = sel[idx2]
+    a, b = coeff(v1['time'].mean(), v2['time'].mean(),
+                 v1['budget'].mean(), v2['budget'].mean())
+    ap, bp = coeff(v1['budget'].mean(), v2['budget'].mean(),
+                   v1['nsn_DD'].mean(), v2['nsn_DD'].mean())
+    ssel.loc[:, 'time'] = 10.
+    ssel.loc[:, 'budget'] = a*ssel['time']+b
+    ssel.loc[:, 'nsn_DD'] = ap*ssel['budget']+bp
+    print(ssel[['time', 'budget', 'nsn_DD']])
+    df = pd.concat((df, ssel))
+
     # plot_vs_budget(df, xvar='budget', yvar='nsn_DD',
     #               xleg='budget', yleg='$N_{SN}$')
     fig, ax = plt.subplots(figsize=(12, 8), ncols=2)
@@ -448,7 +475,7 @@ else:
     #                yleg='Time budget [year]', xleg='budget')
 
     plot_vs_budget(ax[1], df, xvar='time', yvar='budget_per',
-                   xleg='Time budget [year]', yleg='DD budget [%]', noyaxis=True, nolegend=True, tag_budget=[5.0, 8.0])
+                   xleg='Time [year]', yleg='DD budget [%]', noyaxis=True, nolegend=True, tag_budget=[5.0, 8.0])
     plt.subplots_adjust(wspace=0.02)
     """
     plot_vs_budget(df, xvar='budget', yvar='sigma_w',
