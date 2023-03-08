@@ -31,7 +31,8 @@ class Show_Visits:
 
     """
 
-    def __init__(self, ax, file_visits, cadence=1., nvisits_max=300, zmin=0.5, zmax=0.85, dir_files='input'):
+    def __init__(self, ax, file_visits, cadence=1.,
+                 nvisits_max=300, zmin=0.4, zmax=0.85, dir_files='input'):
 
         self.ax = ax
         self.cadence = cadence
@@ -99,6 +100,7 @@ class Show_Visits:
             key = 'nvisits_{}'.format(b)
             self.ax.plot(zvals, self.dictvisits[key](
                 zvals), color=self.colors[b], label='${}$-band'.format(b), lw=3, ls=lsb[b])
+
         self.ax.grid()
         # self.ax.set_xlabel('$z_{\mathrm{complete}}$')
         self.ax.set_ylabel(r'$\mathrm{N_{visits}}$')
@@ -141,6 +143,7 @@ class Show_Visits:
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             nvisits_b = int(np.round(self.dictvisits[key](z)))
+
             ff = 'N$_{\mathrm{visits}}^'+'{}'.format(b)+'$'
             self.ax.text(coeffa[b], 0.99*ylims[1]-scale*(coeffb[b]+1),
                          '{} ={}'.format(ff, nvisits_b), color=self.colors[b])
@@ -180,7 +183,7 @@ class Show_Visits:
 
 def plot_budget_zcomp(ax, zref=0.80):
 
-    df = pd.read_csv('input/Nvisits_zcomp.csv')
+    df = pd.read_csv('input/Nvisits_zcomp_paper.csv')
 
     df['season_length'] = 180.
     df['nvisits_WFD'] = 2122176
@@ -274,6 +277,7 @@ Nvisits_z_fields_file = 'Nvisits_z_fields_-2.0_0.2_error_model_ebvofMW_0.0_nvisi
 
 visitsDir = opts.visitsDir
 
+print('hello', visitsDir, Nvisits_z_file)
 check_grab(visitsDir, [Nvisits_z_file, Nvisits_z_fields_file])
 
 
@@ -286,7 +290,7 @@ myvisits = Show_Visits(ax[0], Nvisits_z_file,
                        dir_files=visitsDir)
 
 myvisits.plotNvisits()
-myvisits.plotnvisits(131)
+myvisits.plotnvisits(122)
 ax[0].set_xlim([0.5, 0.95])
 plot_budget_zcomp(ax[1])
 

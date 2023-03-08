@@ -91,7 +91,8 @@ class Show_Visits:
         zvals = np.arange(self.zmin, self.zmax+zstep, zstep)
 
         lsb = dict(zip(['sum', 'g', 'r', 'i', 'z', 'y'], [
-                   'solid', 'dotted', 'dashdot', (0, (3, 5, 1, 5, 1, 5)), (0, (5, 1)), (0, (3, 1, 1, 1, 1, 1))]))
+                   'solid', 'dotted', 'dashdot', (0, (3, 5, 1, 5, 1, 5)),
+                   (0, (5, 1)), (0, (3, 1, 1, 1, 1, 1))]))
 
         self.ax.plot(zvals, self.dictvisits['nvisits']
                      (zvals), color='k', label='sum', lw=3, ls=lsb['sum'])
@@ -99,7 +100,9 @@ class Show_Visits:
         for io, b in enumerate(self.bands):
             key = 'nvisits_{}'.format(b)
             self.ax.plot(zvals, self.dictvisits[key](
-                zvals), color=self.colors[b], label='${}$-band'.format(b), lw=3, ls=lsb[b])
+                zvals), color=self.colors[b], label='${}$-band'.format(b),
+                lw=3, ls=lsb[b])
+
         self.ax.grid()
         self.ax.set_xlabel('$z_{\mathrm{complete}}$')
         self.ax.set_ylabel(r'$\mathrm{N_{visits}}$')
